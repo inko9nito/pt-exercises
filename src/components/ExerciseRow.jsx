@@ -35,7 +35,7 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
           {LOCATION_LABEL[exercise.location]}
         </span>
       </span>
-      {isMultipleDaily && todayCount > 0 && (
+      {isMultipleDaily && (
         <span className={`row-status-badge ${todayCount >= maxPerDay ? 'complete' : ''}`}>
           {todayCount}/{maxPerDay}
         </span>
