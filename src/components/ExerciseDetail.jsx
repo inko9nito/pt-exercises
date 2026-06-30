@@ -1,5 +1,5 @@
 import ImageCarousel from './ImageCarousel.jsx';
-import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon, PlusIcon } from './Icons.jsx';
+import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ, exercises } from '../data/exercises.js';
 import { isToday, isOptionalToday, formatLastDone } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
@@ -125,18 +125,20 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
                 const isLastDone = i === todayCount - 1;
                 const tappable = isNext || isLastDone;
                 return (
-                  <button
-                    key={i}
-                    className={`session-box ${done ? 'done' : ''} ${isNext ? 'next' : ''}`}
-                    disabled={!tappable}
-                    aria-label={done ? `Session ${i + 1} done, tap to undo` : `Log session ${i + 1}`}
-                    onClick={() => {
-                      if (isNext) onMarkDone(exercise.id);
-                      else if (isLastDone) onUndo(exercise.id);
-                    }}
-                  >
-                    {done ? <CheckIcon size={18} /> : isNext ? <PlusIcon size={18} /> : <span className="session-box-num">{i + 1}</span>}
-                  </button>
+                  <div className="session-item" key={i}>
+                    <button
+                      className={`session-box ${done ? 'done' : ''} ${isNext ? 'next' : ''}`}
+                      disabled={!tappable}
+                      aria-label={done ? `Session ${i + 1} done, tap to undo` : `Mark session ${i + 1} complete`}
+                      onClick={() => {
+                        if (isNext) onMarkDone(exercise.id);
+                        else if (isLastDone) onUndo(exercise.id);
+                      }}
+                    >
+                      {(done || isNext) && <CheckIcon size={18} />}
+                    </button>
+                    <span className="session-item-label">Session {i + 1}</span>
+                  </div>
                 );
               })}
             </div>
