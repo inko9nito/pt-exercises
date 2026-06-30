@@ -6,7 +6,7 @@ import { useSwipe } from '../utils/useSwipe.js';
 export default function Lightbox({ images, initialIndex, alt, onClose }) {
   const [idx, setIdx] = useState(initialIndex);
 
-  const goTo = (i) => setIdx(Math.max(0, Math.min(images.length - 1, i)));
+  const goTo = (i) => setIdx(((i % images.length) + images.length) % images.length);
 
   const swipeHandlers = useSwipe({
     onSwipeLeft: () => goTo(idx + 1),

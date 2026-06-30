@@ -28,7 +28,7 @@ export default function ImageCarousel({ images, alt }) {
 
   if (!images || images.length === 0) return null;
 
-  const goTo = (i) => setIdx(Math.max(0, Math.min(slideCount - 1, i)));
+  const goTo = (i) => setIdx(((i % slideCount) + slideCount) % slideCount);
   const prev = (e) => { e.stopPropagation(); goTo(idx - 1); };
   const next = (e) => { e.stopPropagation(); goTo(idx + 1); };
 
@@ -78,15 +78,15 @@ export default function ImageCarousel({ images, alt }) {
           />
         )}
 
-        {idx > 0 && (
-          <button className="hero-arrow hero-arrow-left" onClick={prev} aria-label="Previous">
-            <ChevronLeftIcon size={18} />
-          </button>
-        )}
-        {idx < slideCount - 1 && (
-          <button className="hero-arrow hero-arrow-right" onClick={next} aria-label="Next">
-            <ChevronRightIcon size={18} />
-          </button>
+        {slideCount > 1 && (
+          <>
+            <button className="hero-arrow hero-arrow-left" onClick={prev} aria-label="Previous">
+              <ChevronLeftIcon size={18} />
+            </button>
+            <button className="hero-arrow hero-arrow-right" onClick={next} aria-label="Next">
+              <ChevronRightIcon size={18} />
+            </button>
+          </>
         )}
 
         {slideCount > 1 && (
