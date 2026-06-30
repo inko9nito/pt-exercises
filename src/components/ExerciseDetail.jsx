@@ -1,9 +1,14 @@
 import ImageCarousel from './ImageCarousel.jsx';
-import { ChevronLeftIcon, ClockIcon, WrenchIcon, UndoIcon } from './Icons.jsx';
-import { LOCATION_LABEL, FREQ } from '../data/exercises.js';
+import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon } from './Icons.jsx';
+import { LOCATION_LABEL, FREQ, exercises } from '../data/exercises.js';
 import { isToday, formatLastDone } from '../utils/tracker.js';
+import { assetUrl } from '../utils/asset.js';
 
-export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onClose, closing }) {
+function pluralize(value, singular, plural) {
+  return value === '1' ? singular : plural;
+}
+
+export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onClose, onNext, closing }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   const todayCount = history.filter(isToday).length;
@@ -18,6 +23,9 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
     : isHourly
     ? false
     : todayCount > 0;
+
+  const nextExercise = exercises.find((e) => e.id === exercise.id + 1) || null;
+  const showUpNext = completedToday && nextExercise;
 
   return (
     <div className={`detail-screen ${closing ? 'is-closing' : ''}`}>
@@ -47,16 +55,14 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
           {(exercise.sets || exercise.reps) && (
             <div className="detail-stats-row">
               {exercise.sets && (
-                <div className="detail-stat">
-                  <span className="detail-stat-value">{exercise.sets}</span>
-                  <span className="detail-stat-label">Sets</span>
-                </div>
+                <span className="detail-stat-inline">
+                  <strong>{exercise.sets}</strong> {pluralize(exercise.sets, 'Set', 'Sets')}
+                </span>
               )}
               {exercise.reps && (
-                <div className="detail-stat">
-                  <span className="detail-stat-value">{exercise.reps}</span>
-                  <span className="detail-stat-label">Reps</span>
-                </div>
+                <span className="detail-stat-inline">
+                  <strong>{exercise.reps}</strong> {pluralize(exercise.reps, 'Rep', 'Reps')}
+                </span>
               )}
             </div>
           )}
@@ -84,20 +90,61 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
             Last done <strong>{formatLastDone(lastDoneDate)}</strong>
             {(isMultipleDaily || isHourly) && todayCount > 0 && ` · ${todayCount}× today`}
           </p>
+
+          {showUpNext && (
+            <div className="up-next">
+              <p className="detail-section-label">Up next</p>
+              <button className="up-next-card" onClick={() => onNext(nextExercise)}>
+                <span className="up-next-thumb">
+                  <img src={assetUrl(nextExercise.images[0])} alt="" />
+                </span>
+                <span className="up-next-name">{nextExercise.name}</span>
+                <span className="row-chevron">
+                  <ChevronRightIcon size={18} />
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="detail-action-bar">
-        <button
-          className={`btn-complete ${completedToday ? 'completed' : ''}`}
-          onClick={() => onMarkDone(exercise.id)}
-        >
-          {completedToday ? 'Completed' : 'Mark complete'}
-        </button>
-        {history.length > 0 && (
-          <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
-            <UndoIcon size={18} />
-          </button>
+        {isMultipleDaily ? (
+          <div className="session-boxes">
+            {Array.from({ length: maxPerDay }).map((_, i) => {
+              const done = i < todayCount;
+              const isNext = i === todayCount;
+              const isLastDone = i === todayCount - 1;
+              const tappable = isNext || isLastDone;
+              return (
+                <button
+                  key={i}
+                  className={`session-box ${done ? 'done' : ''} ${isNext ? 'next' : ''}`}
+                  disabled={!tappable}
+                  onClick={() => {
+                    if (isNext) onMarkDone(exercise.id);
+                    else if (isLastDone) onUndo(exercise.id);
+                  }}
+                >
+                  {done ? <CheckIcon size={16} /> : <span className="session-box-num">{i + 1}</span>}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <>
+            <button
+              className={`btn-complete ${completedToday ? 'completed' : ''}`}
+              onClick={() => onMarkDone(exercise.id)}
+            >
+              {completedToday ? 'Completed' : 'Mark complete'}
+            </button>
+            {history.length > 0 && (
+              <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
+                <UndoIcon size={18} />
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

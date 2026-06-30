@@ -44,6 +44,19 @@ export default function App() {
     setSelectedExercise(exercise);
   }, []);
 
+  // Used by the "Up next" card: swaps to the next exercise without growing
+  // the history stack, so the back button/swipe still returns to the list
+  // (rather than stepping back through every exercise visited via "next").
+  const goToNextExercise = useCallback((exercise) => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    window.history.replaceState({ exerciseId: exercise.id }, '');
+    setDetailClosing(false);
+    setSelectedExercise(exercise);
+  }, []);
+
   const closeExercise = useCallback(() => {
     window.history.back();
   }, []);
@@ -119,6 +132,7 @@ export default function App() {
           onMarkDone={handleMarkDone}
           onUndo={handleUndo}
           onClose={closeExercise}
+          onNext={goToNextExercise}
           closing={detailClosing}
         />
       )}
