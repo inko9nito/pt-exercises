@@ -3,7 +3,7 @@ import { ChevronLeftIcon, ClockIcon, WrenchIcon, UndoIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ } from '../data/exercises.js';
 import { isToday, formatLastDone } from '../utils/tracker.js';
 
-export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onClose }) {
+export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onClose, closing }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   const todayCount = history.filter(isToday).length;
@@ -20,7 +20,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
     : todayCount > 0;
 
   return (
-    <div className="detail-screen">
+    <div className={`detail-screen ${closing ? 'is-closing' : ''}`}>
       <div className="detail-header">
         <button className="back-button" onClick={onClose} aria-label="Back">
           <ChevronLeftIcon size={22} />

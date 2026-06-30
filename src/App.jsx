@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import DailyView from './components/DailyView.jsx';
 import AllExercises from './components/AllExercises.jsx';
 import ProgressView from './components/ProgressView.jsx';
@@ -9,11 +9,14 @@ import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tr
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
 const TAB_PROGRESS = 'progress';
+const DETAIL_EXIT_MS = 300;
 
 export default function App() {
   const [tab, setTab] = useState(TAB_TODAY);
   const [completions, setCompletions] = useState(() => loadCompletions());
   const [selectedExercise, setSelectedExercise] = useState(null);
+  const [detailClosing, setDetailClosing] = useState(false);
+  const closeTimerRef = useRef(null);
 
   const handleMarkDone = useCallback((exerciseId) => {
     setCompletions((prev) => {
@@ -32,7 +35,12 @@ export default function App() {
   }, []);
 
   const openExercise = useCallback((exercise) => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
     window.history.pushState({ exerciseId: exercise.id }, '');
+    setDetailClosing(false);
     setSelectedExercise(exercise);
   }, []);
 
@@ -41,9 +49,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const onPopState = () => setSelectedExercise(null);
+    const onPopState = () => {
+      setDetailClosing(true);
+      closeTimerRef.current = setTimeout(() => {
+        setSelectedExercise(null);
+        setDetailClosing(false);
+      }, DETAIL_EXIT_MS);
+    };
     window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
   }, []);
 
   return (
@@ -96,11 +113,13 @@ export default function App() {
 
       {selectedExercise && (
         <ExerciseDetail
+          key={selectedExercise.id}
           exercise={selectedExercise}
           completions={completions}
           onMarkDone={handleMarkDone}
           onUndo={handleUndo}
           onClose={closeExercise}
+          closing={detailClosing}
         />
       )}
     </div>
