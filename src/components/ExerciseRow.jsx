@@ -1,6 +1,6 @@
 import { ChevronRightIcon, CheckCircleIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ } from '../data/exercises.js';
-import { isToday } from '../utils/tracker.js';
+import { isToday, isOptionalToday } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
 
 export default function ExerciseRow({ exercise, completions, onOpen }) {
@@ -9,6 +9,7 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
   const todayCount = history.filter(isToday).length;
   const isMultipleDaily = exercise.freqType === FREQ.MULTIPLE_DAILY;
   const maxPerDay = exercise.maxPerDay || 99;
+  const optional = isOptionalToday(exercise, completions);
 
   return (
     <button className="exercise-row" onClick={() => onOpen(exercise)}>
@@ -28,7 +29,13 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
       <span className="row-body">
         <span className="row-name">{exercise.name}</span>
         <span className="row-meta">
-          {exercise.freqLabel} · {LOCATION_LABEL[exercise.location]}
+          {optional ? (
+            <span className="optional-tag">Optional today</span>
+          ) : (
+            exercise.freqLabel
+          )}
+          {' · '}
+          {LOCATION_LABEL[exercise.location]}
         </span>
       </span>
       <span className="row-chevron">

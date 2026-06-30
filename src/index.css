@@ -69,11 +69,16 @@
   padding: 0;
 }
 
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   background: var(--bg);
   color: var(--ink);
   line-height: 1.5;
   min-height: 100dvh;
+  overscroll-behavior-y: none;
 }
 
 button {
@@ -147,6 +152,7 @@ button {
 .app-main {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-bottom: calc(var(--nav-height) + 12px);
 }
 
@@ -436,6 +442,11 @@ button {
   white-space: nowrap;
 }
 
+.optional-tag {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .row-chevron {
   flex-shrink: 0;
   color: var(--border-strong);
@@ -528,6 +539,7 @@ button {
 .detail-scroll {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .detail-body {
@@ -561,6 +573,17 @@ button {
 
 .detail-meta-dot {
   color: var(--ink-3);
+}
+
+.optional-badge {
+  display: inline-block;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  margin-bottom: var(--space-5);
 }
 
 .detail-stats-row {
@@ -621,6 +644,29 @@ button {
 /* ============================================================
    Session boxes (multiple-times-per-day exercises)
    ============================================================ */
+.session-boxes-wrap {
+  width: 100%;
+}
+
+.session-boxes-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.session-boxes-label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.session-boxes-count {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
 .session-boxes {
   display: flex;
   gap: var(--space-2);

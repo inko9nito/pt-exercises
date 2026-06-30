@@ -28,7 +28,7 @@ export function undoLast(completions, exerciseId) {
   return { ...completions, [id]: prev.slice(0, -1) };
 }
 
-function daysBetween(date1, date2) {
+export function daysBetween(date1, date2) {
   const d1 = new Date(date1);
   const d2 = new Date(date2);
   d1.setHours(0, 0, 0, 0);
@@ -82,6 +82,19 @@ export function isDueToday(exercise, completions) {
     default:
       return true;
   }
+}
+
+// "Daily to every other day" exercises are only optional on a given day if
+// they were done the day before — skipping today still keeps the every-other-day
+// minimum, whereas skipping two days in a row would not.
+export function isOptionalToday(exercise, completions) {
+  if (exercise.freqType !== FREQ.DAILY_OR_EOD) return false;
+  const id = String(exercise.id);
+  const history = completions[id] || [];
+  if (history.length === 0) return false;
+  if (history.some(isToday)) return false;
+  const last = history[history.length - 1];
+  return daysBetween(last, new Date()) === 1;
 }
 
 export function getTodayCount(exercise, completions) {
