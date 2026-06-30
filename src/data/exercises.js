@@ -24,7 +24,7 @@ export const LOCATION_LABEL = {
 export const exercises = [
   {
     id: 1,
-    name: 'Forelimb Three Legged Stance',
+    name: 'Forelimb three legged stance',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -38,7 +38,7 @@ export const exercises = [
   },
   {
     id: 2,
-    name: 'Rear Limb Three Legged Stance',
+    name: 'Rear limb three legged stance',
     sets: '1',
     reps: '5–7',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -52,7 +52,7 @@ export const exercises = [
   },
   {
     id: 3,
-    name: 'Two Legged Stands Diagonal',
+    name: 'Two legged stands diagonal',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -80,7 +80,7 @@ export const exercises = [
   },
   {
     id: 5,
-    name: 'Mattress Walking',
+    name: 'Mattress walking',
     sets: '1',
     reps: '5',
     freqType: FREQ.DAILY,
@@ -94,7 +94,7 @@ export const exercises = [
   },
   {
     id: 6,
-    name: 'Circle Walking',
+    name: 'Circle walking',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_3_DAYS,
@@ -108,7 +108,7 @@ export const exercises = [
   },
   {
     id: 7,
-    name: 'Slow Hill Climbing',
+    name: 'Slow hill climbing',
     sets: '5 min max',
     reps: null,
     freqType: FREQ.TWICE_WEEKLY,
@@ -122,7 +122,7 @@ export const exercises = [
   },
   {
     id: 8,
-    name: 'Slow Hill Descent',
+    name: 'Slow hill descent',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_3_DAYS,
@@ -136,7 +136,7 @@ export const exercises = [
   },
   {
     id: 9,
-    name: 'Happy Butt Rub Dance',
+    name: 'Happy butt rub dance',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -150,7 +150,7 @@ export const exercises = [
   },
   {
     id: 10,
-    name: 'Step Stretch',
+    name: 'Step stretch',
     sets: '1',
     reps: '3–5',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -164,7 +164,7 @@ export const exercises = [
   },
   {
     id: 11,
-    name: 'Belly Lift',
+    name: 'Belly lift',
     sets: '1',
     reps: '1–2',
     freqType: FREQ.MULTIPLE_DAILY,
@@ -178,7 +178,7 @@ export const exercises = [
   },
   {
     id: 12,
-    name: 'Rear Limb Abduction',
+    name: 'Rear limb abduction',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -192,7 +192,7 @@ export const exercises = [
   },
   {
     id: 13,
-    name: 'Rear Limb Adduction',
+    name: 'Rear limb adduction',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -220,7 +220,7 @@ export const exercises = [
   },
   {
     id: 15,
-    name: 'Weight Shifting: Back End',
+    name: 'Weight shifting: back end',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -234,7 +234,7 @@ export const exercises = [
   },
   {
     id: 16,
-    name: 'Weight Shifting: Front End',
+    name: 'Weight shifting: front end',
     sets: '1',
     reps: '5',
     freqType: FREQ.EVERY_OTHER_DAY,
@@ -248,7 +248,7 @@ export const exercises = [
   },
   {
     id: 17,
-    name: 'Cookie Stretches Sequence',
+    name: 'Cookie stretches sequence',
     sets: '1',
     reps: '2',
     freqType: FREQ.DAILY_OR_EOD,
@@ -262,7 +262,7 @@ export const exercises = [
   },
   {
     id: 18,
-    name: 'Bicycling Hind Leg',
+    name: 'Bicycling hind leg',
     sets: '1',
     reps: '3–5',
     freqType: FREQ.HOURLY,
@@ -276,7 +276,7 @@ export const exercises = [
   },
   {
     id: 19,
-    name: 'General Neck Massage',
+    name: 'General neck massage',
     sets: '10–20 min',
     reps: null,
     freqType: FREQ.AS_NEEDED,
@@ -289,7 +289,7 @@ export const exercises = [
   },
   {
     id: 20,
-    name: 'Hip Massage',
+    name: 'Hip massage',
     sets: '1',
     reps: '1–3',
     freqType: FREQ.TWICE_WEEKLY,

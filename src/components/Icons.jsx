@@ -110,3 +110,23 @@ export const TrendingUpIcon = ({ size = 20 }) => (
     <polyline points="17 6 23 6 23 12"/>
   </svg>
 );
+
+export const PlayIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <polygon points="6 4 20 12 6 20 6 4"/>
+  </svg>
+);
+
+export const PauseIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <rect x="6" y="4" width="4" height="16" rx="1"/>
+    <rect x="14" y="4" width="4" height="16" rx="1"/>
+  </svg>
+);
+
+export const XIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);

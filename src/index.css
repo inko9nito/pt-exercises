@@ -372,7 +372,8 @@ button {
   border-radius: var(--radius-sm);
   overflow: hidden;
   flex-shrink: 0;
-  background: var(--bg);
+  background: var(--white);
+  border: 1px solid var(--border);
 }
 
 .row-thumb img {
@@ -632,8 +633,10 @@ button {
   position: relative;
   width: 100%;
   height: 280px;
-  background: var(--bg);
+  background: var(--white);
   overflow: hidden;
+  touch-action: pan-y;
+  border-bottom: 1px solid var(--border);
 }
 
 .hero-img {
@@ -641,6 +644,37 @@ button {
   height: 100%;
   object-fit: cover;
   display: block;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.hero-anim {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.hero-anim-frame {
+  position: absolute;
+  inset: 0;
+  transition: opacity .5s ease;
+}
+
+.hero-play-toggle {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(0,0,0,.55);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-arrow {
@@ -667,6 +701,7 @@ button {
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  align-items: center;
   gap: 6px;
 }
 
@@ -682,6 +717,70 @@ button {
   background: var(--white);
   width: 16px;
   border-radius: 3px;
+}
+
+.hero-pip-anim {
+  width: 15px;
+  height: 15px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0,0,0,.55);
+  flex-shrink: 0;
+}
+
+.hero-pip-anim.active {
+  background: var(--white);
+  color: var(--ink);
+}
+
+/* ============================================================
+   Lightbox (tap to enlarge)
+   ============================================================ */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(9,9,11,.95);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: pan-y;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.lightbox-pips {
+  position: absolute;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
 }
 
 /* ============================================================
