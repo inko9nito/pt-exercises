@@ -1,7 +1,7 @@
 import ImageCarousel from './ImageCarousel.jsx';
 import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ, exercises } from '../data/exercises.js';
-import { isToday, isOptionalToday, formatLastDone } from '../utils/tracker.js';
+import { isToday, isOptionalToday, isDueToday, getNextDueEstimate, formatLastDone } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
 
 function pluralize(value, singular, plural) {
@@ -16,17 +16,23 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
 
   const isMultipleDaily = exercise.freqType === FREQ.MULTIPLE_DAILY;
   const isHourly = exercise.freqType === FREQ.HOURLY;
+  const isAsNeeded = exercise.freqType === FREQ.AS_NEEDED;
   const maxPerDay = exercise.maxPerDay || 99;
 
+  // Derived from the same isDueToday check that drives the Due Now / Not Due
+  // grouping, so the button state can never contradict which list the
+  // exercise is actually showing up in (this used to be its own ad hoc
+  // per-type guess, which let "as needed" show "Completed" while still
+  // being permanently due, and never let "every 1-2 hours" show
+  // "Completed" even during its real cooldown window).
   const completedToday = isMultipleDaily
     ? todayCount >= maxPerDay
-    : isHourly
-    ? false
-    : todayCount > 0;
+    : !isDueToday(exercise, completions);
 
   const nextExercise = exercises.find((e) => e.id === exercise.id + 1) || null;
   const showUpNext = completedToday && nextExercise;
   const optional = isOptionalToday(exercise, completions);
+  const nextDue = getNextDueEstimate(exercise, completions);
 
   return (
     <div className={`detail-screen ${closing ? 'is-closing' : ''}`}>
@@ -91,8 +97,15 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
 
           <p className="detail-last-done">
             Last done <strong>{formatLastDone(lastDoneDate)}</strong>
-            {(isMultipleDaily || isHourly) && todayCount > 0 && ` · ${todayCount}× today`}
+            {(isMultipleDaily || isHourly || isAsNeeded) && todayCount > 0 && ` · ${todayCount}× today`}
           </p>
+
+          {nextDue && (
+            <p className="detail-next-due">
+              Next due around{' '}
+              <strong>{nextDue.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+            </p>
+          )}
 
           {showUpNext && (
             <div className="up-next">

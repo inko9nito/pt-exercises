@@ -97,6 +97,19 @@ export function isOptionalToday(exercise, completions) {
   return daysBetween(last, new Date()) === 1;
 }
 
+// For "every 1-2 hours" exercises, estimate when it'll be due again so the
+// UI can show "next due ~2:45 PM" instead of leaving the gap unexplained.
+export function getNextDueEstimate(exercise, completions) {
+  if (exercise.freqType !== FREQ.HOURLY) return null;
+  const id = String(exercise.id);
+  const history = completions[id] || [];
+  if (history.length === 0) return null;
+  const last = new Date(history[history.length - 1]);
+  const next = new Date(last.getTime() + (exercise.freqMinutes || 90) * 60000);
+  if (next <= new Date()) return null;
+  return next;
+}
+
 export function getTodayCount(exercise, completions) {
   const id = String(exercise.id);
   const history = completions[id] || [];
