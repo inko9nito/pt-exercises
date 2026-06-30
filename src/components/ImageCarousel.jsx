@@ -12,24 +12,24 @@ export default function ImageCarousel({ images, alt }) {
     <div className="carousel">
       <img
         src={images[idx]}
-        alt={`${alt} - image ${idx + 1}`}
+        alt={`${alt} — step ${idx + 1}`}
         className="carousel-img"
         loading="lazy"
       />
       {images.length > 1 && (
         <div className="carousel-controls">
-          <button onClick={prev} className="carousel-btn" aria-label="Previous image">‹</button>
-          <span className="carousel-dots">
+          <button onClick={prev} className="carousel-arrow" aria-label="Previous">‹</button>
+          <div className="carousel-pips">
             {images.map((_, i) => (
               <button
                 key={i}
-                className={`carousel-dot ${i === idx ? 'active' : ''}`}
+                className={`carousel-pip ${i === idx ? 'active' : ''}`}
                 onClick={() => setIdx(i)}
                 aria-label={`Image ${i + 1}`}
               />
             ))}
-          </span>
-          <button onClick={next} className="carousel-btn" aria-label="Next image">›</button>
+          </div>
+          <button onClick={next} className="carousel-arrow" aria-label="Next">›</button>
         </div>
       )}
     </div>

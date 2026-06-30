@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import DailyView from './components/DailyView.jsx';
 import AllExercises from './components/AllExercises.jsx';
+import { CalendarIcon, ListIcon, ActivityIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
 
 const TAB_TODAY = 'today';
@@ -30,10 +31,12 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-inner">
-          <div className="header-paw">🐾</div>
-          <div>
-            <h1 className="app-title">Domino's PT</h1>
-            <p className="app-subtitle">Physical Therapy Exercises</p>
+          <div className="header-wordmark">
+            <span className="header-name">Domino</span>
+            <span className="header-subtitle">Physical Therapy</span>
+          </div>
+          <div className="header-logo">
+            <ActivityIcon size={22} />
           </div>
         </div>
       </header>
@@ -60,14 +63,14 @@ export default function App() {
           className={`nav-tab ${tab === TAB_TODAY ? 'active' : ''}`}
           onClick={() => setTab(TAB_TODAY)}
         >
-          <span className="nav-icon">📋</span>
+          <span className="nav-icon"><CalendarIcon size={22} /></span>
           <span className="nav-label">Today</span>
         </button>
         <button
           className={`nav-tab ${tab === TAB_ALL ? 'active' : ''}`}
           onClick={() => setTab(TAB_ALL)}
         >
-          <span className="nav-icon">📚</span>
+          <span className="nav-icon"><ListIcon size={22} /></span>
           <span className="nav-label">All Exercises</span>
         </button>
       </nav>

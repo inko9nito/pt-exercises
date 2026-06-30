@@ -1,30 +1,34 @@
 import { useState, useMemo } from 'react';
 import ExerciseCard from './ExerciseCard.jsx';
+import { SearchIcon, HomeIcon, TreeIcon, WrenchIcon } from './Icons.jsx';
 import { exercises, LOCATION } from '../data/exercises.js';
 
-const FILTER_ALL = 'all';
-const FILTER_INDOOR = 'indoor';
-const FILTER_OUTDOOR = 'outdoor';
-const FILTER_EQUIPMENT = 'equipment';
-const FILTER_NO_EQUIPMENT = 'no-equipment';
+const FILTERS = [
+  { key: 'all',          label: 'All' },
+  { key: 'indoor',       label: 'Indoors',    icon: <HomeIcon size={12} /> },
+  { key: 'outdoor',      label: 'Outdoors',   icon: <TreeIcon size={12} /> },
+  { key: 'equipment',    label: 'Needs Gear', icon: <WrenchIcon size={12} /> },
+  { key: 'no-equipment', label: 'No Gear' },
+];
 
 export default function AllExercises({ completions, onMarkDone, onUndo }) {
-  const [filter, setFilter] = useState(FILTER_ALL);
+  const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
     return exercises.filter((ex) => {
+      const q = search.toLowerCase();
       const matchSearch =
         !search ||
-        ex.name.toLowerCase().includes(search.toLowerCase()) ||
-        ex.description.toLowerCase().includes(search.toLowerCase());
+        ex.name.toLowerCase().includes(q) ||
+        ex.description.toLowerCase().includes(q);
 
       const matchFilter =
-        filter === FILTER_ALL ||
-        (filter === FILTER_INDOOR && ex.location === LOCATION.INDOOR) ||
-        (filter === FILTER_OUTDOOR && ex.location === LOCATION.OUTDOOR) ||
-        (filter === FILTER_EQUIPMENT && ex.equipment.length > 0) ||
-        (filter === FILTER_NO_EQUIPMENT && ex.equipment.length === 0);
+        filter === 'all' ||
+        (filter === 'indoor'       && ex.location === LOCATION.INDOOR) ||
+        (filter === 'outdoor'      && ex.location === LOCATION.OUTDOOR) ||
+        (filter === 'equipment'    && ex.equipment.length > 0) ||
+        (filter === 'no-equipment' && ex.equipment.length === 0);
 
       return matchSearch && matchFilter;
     });
@@ -33,33 +37,33 @@ export default function AllExercises({ completions, onMarkDone, onUndo }) {
   return (
     <div className="all-exercises">
       <div className="filter-bar">
-        <input
-          type="search"
-          className="search-input"
-          placeholder="Search exercises…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div className="filter-chips">
-          {[
-            { key: FILTER_ALL, label: 'All' },
-            { key: FILTER_INDOOR, label: '🏠 Indoors' },
-            { key: FILTER_OUTDOOR, label: '🌳 Outdoors' },
-            { key: FILTER_EQUIPMENT, label: '🛠 Needs gear' },
-            { key: FILTER_NO_EQUIPMENT, label: 'No gear' },
-          ].map(({ key, label }) => (
+        <div className="search-wrap">
+          <span className="search-icon"><SearchIcon size={16} /></span>
+          <input
+            type="search"
+            className="search-input"
+            placeholder="Search exercises"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="filter-row">
+          {FILTERS.map(({ key, label, icon }) => (
             <button
               key={key}
-              className={`chip ${filter === key ? 'active' : ''}`}
+              className={`filter-chip ${filter === key ? 'active' : ''}`}
               onClick={() => setFilter(key)}
             >
+              {icon && <span className="tag-icon">{icon}</span>}
               {label}
             </button>
           ))}
         </div>
       </div>
 
-      <p className="results-count">{filtered.length} exercise{filtered.length !== 1 ? 's' : ''}</p>
+      <p className="results-meta">
+        {filtered.length} {filtered.length === 1 ? 'exercise' : 'exercises'}
+      </p>
 
       <div className="exercise-list">
         {filtered.map((ex) => (
