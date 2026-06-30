@@ -19,13 +19,6 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
     ? false
     : todayCount > 0;
 
-  const setsReps = [
-    exercise.sets ? `Sets ${exercise.sets}` : null,
-    exercise.reps ? `Reps ${exercise.reps}` : null,
-  ]
-    .filter(Boolean)
-    .join('  ·  ');
-
   return (
     <div className="detail-screen">
       <div className="detail-header">
@@ -49,13 +42,24 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
             </span>
             <span className="detail-meta-dot">·</span>
             <span className="detail-meta-item">{LOCATION_LABEL[exercise.location]}</span>
-            {setsReps && (
-              <>
-                <span className="detail-meta-dot">·</span>
-                <span className="detail-meta-item">{setsReps}</span>
-              </>
-            )}
           </div>
+
+          {(exercise.sets || exercise.reps) && (
+            <div className="detail-stats-row">
+              {exercise.sets && (
+                <div className="detail-stat">
+                  <span className="detail-stat-value">{exercise.sets}</span>
+                  <span className="detail-stat-label">Sets</span>
+                </div>
+              )}
+              {exercise.reps && (
+                <div className="detail-stat">
+                  <span className="detail-stat-value">{exercise.reps}</span>
+                  <span className="detail-stat-label">Reps</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {exercise.equipment.length > 0 && (
             <div className="detail-section">

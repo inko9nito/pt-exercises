@@ -54,16 +54,12 @@ export default function ImageCarousel({ images, alt }) {
       <div className="hero-carousel" {...swipeHandlers}>
         {isAnimSlide ? (
           <div className="hero-anim" onClick={handleImageTap}>
-            {images.map((src, i) => (
-              <img
-                key={src}
-                src={assetUrl(src)}
-                alt={`${alt} — animated preview`}
-                className="hero-img hero-anim-frame"
-                style={{ opacity: i === animFrame ? 1 : 0 }}
-                draggable={false}
-              />
-            ))}
+            <img
+              src={assetUrl(images[animFrame])}
+              alt={`${alt} — animated preview`}
+              className="hero-img"
+              draggable={false}
+            />
             <button
               className="hero-play-toggle"
               onClick={(e) => { e.stopPropagation(); setPlaying((p) => !p); }}
