@@ -36,14 +36,15 @@ function daysBetween(date1, date2) {
   return Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
 }
 
-function isToday(isoString) {
-  const d = new Date(isoString);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
+export function dateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function isToday(isoString) {
+  return dateKey(new Date(isoString)) === dateKey(new Date());
 }
 
 export function isDueToday(exercise, completions) {
@@ -110,4 +111,50 @@ export function formatLastDone(date) {
     return 'Yesterday';
   }
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+export function getTotalSessions(completions) {
+  return Object.values(completions).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+export function getStreak(completions) {
+  const dates = new Set();
+  for (const arr of Object.values(completions)) {
+    for (const iso of arr) dates.add(dateKey(new Date(iso)));
+  }
+
+  const cursor = new Date();
+  if (!dates.has(dateKey(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  let streak = 0;
+  while (dates.has(dateKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+export function getCompletionDateMap(completions, exercises) {
+  const map = new Map();
+  for (const ex of exercises) {
+    const history = completions[String(ex.id)] || [];
+    for (const iso of history) {
+      const d = new Date(iso);
+      const key = dateKey(d);
+      const entry = {
+        id: ex.id,
+        name: ex.name,
+        time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sortMs: d.getTime(),
+      };
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(entry);
+    }
+  }
+  for (const arr of map.values()) {
+    arr.sort((a, b) => a.sortMs - b.sortMs);
+  }
+  return map;
 }

@@ -1,36 +1,42 @@
 import { useState } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon } from './Icons.jsx';
+import { assetUrl } from '../utils/asset.js';
 
 export default function ImageCarousel({ images, alt }) {
   const [idx, setIdx] = useState(0);
 
   if (!images || images.length === 0) return null;
 
-  const prev = () => setIdx((i) => (i - 1 + images.length) % images.length);
-  const next = () => setIdx((i) => (i + 1) % images.length);
+  const prev = (e) => {
+    e.stopPropagation();
+    setIdx((i) => (i - 1 + images.length) % images.length);
+  };
+  const next = (e) => {
+    e.stopPropagation();
+    setIdx((i) => (i + 1) % images.length);
+  };
 
   return (
-    <div className="carousel">
+    <div className="hero-carousel">
       <img
-        src={images[idx]}
+        src={assetUrl(images[idx])}
         alt={`${alt} — step ${idx + 1}`}
-        className="carousel-img"
-        loading="lazy"
+        className="hero-img"
       />
       {images.length > 1 && (
-        <div className="carousel-controls">
-          <button onClick={prev} className="carousel-arrow" aria-label="Previous">‹</button>
-          <div className="carousel-pips">
+        <>
+          <button className="hero-arrow hero-arrow-left" onClick={prev} aria-label="Previous image">
+            <ChevronLeftIcon size={18} />
+          </button>
+          <button className="hero-arrow hero-arrow-right" onClick={next} aria-label="Next image">
+            <ChevronRightIcon size={18} />
+          </button>
+          <div className="hero-pips">
             {images.map((_, i) => (
-              <button
-                key={i}
-                className={`carousel-pip ${i === idx ? 'active' : ''}`}
-                onClick={() => setIdx(i)}
-                aria-label={`Image ${i + 1}`}
-              />
+              <span key={i} className={`hero-pip ${i === idx ? 'active' : ''}`} />
             ))}
           </div>
-          <button onClick={next} className="carousel-arrow" aria-label="Next">›</button>
-        </div>
+        </>
       )}
     </div>
   );

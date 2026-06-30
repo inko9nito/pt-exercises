@@ -1,15 +1,19 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import DailyView from './components/DailyView.jsx';
 import AllExercises from './components/AllExercises.jsx';
-import { CalendarIcon, ListIcon, ActivityIcon } from './components/Icons.jsx';
+import ProgressView from './components/ProgressView.jsx';
+import ExerciseDetail from './components/ExerciseDetail.jsx';
+import { CalendarIcon, ListIcon, TrendingUpIcon, ActivityIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
+const TAB_PROGRESS = 'progress';
 
 export default function App() {
   const [tab, setTab] = useState(TAB_TODAY);
   const [completions, setCompletions] = useState(() => loadCompletions());
+  const [selectedExercise, setSelectedExercise] = useState(null);
 
   const handleMarkDone = useCallback((exerciseId) => {
     setCompletions((prev) => {
@@ -27,13 +31,28 @@ export default function App() {
     });
   }, []);
 
+  const openExercise = useCallback((exercise) => {
+    window.history.pushState({ exerciseId: exercise.id }, '');
+    setSelectedExercise(exercise);
+  }, []);
+
+  const closeExercise = useCallback(() => {
+    window.history.back();
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => setSelectedExercise(null);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="header-inner">
           <div className="header-wordmark">
             <span className="header-name">Domino</span>
-            <span className="header-subtitle">Physical Therapy</span>
+            <span className="header-subtitle">Physical therapy</span>
           </div>
           <div className="header-logo">
             <ActivityIcon size={22} />
@@ -43,19 +62,12 @@ export default function App() {
 
       <main className="app-main">
         {tab === TAB_TODAY && (
-          <DailyView
-            completions={completions}
-            onMarkDone={handleMarkDone}
-            onUndo={handleUndo}
-          />
+          <DailyView completions={completions} onOpenExercise={openExercise} />
         )}
         {tab === TAB_ALL && (
-          <AllExercises
-            completions={completions}
-            onMarkDone={handleMarkDone}
-            onUndo={handleUndo}
-          />
+          <AllExercises completions={completions} onOpenExercise={openExercise} />
         )}
+        {tab === TAB_PROGRESS && <ProgressView completions={completions} />}
       </main>
 
       <nav className="bottom-nav">
@@ -71,9 +83,26 @@ export default function App() {
           onClick={() => setTab(TAB_ALL)}
         >
           <span className="nav-icon"><ListIcon size={22} /></span>
-          <span className="nav-label">All Exercises</span>
+          <span className="nav-label">All exercises</span>
+        </button>
+        <button
+          className={`nav-tab ${tab === TAB_PROGRESS ? 'active' : ''}`}
+          onClick={() => setTab(TAB_PROGRESS)}
+        >
+          <span className="nav-icon"><TrendingUpIcon size={22} /></span>
+          <span className="nav-label">Progress</span>
         </button>
       </nav>
+
+      {selectedExercise && (
+        <ExerciseDetail
+          exercise={selectedExercise}
+          completions={completions}
+          onMarkDone={handleMarkDone}
+          onUndo={handleUndo}
+          onClose={closeExercise}
+        />
+      )}
     </div>
   );
 }

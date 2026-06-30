@@ -1,17 +1,17 @@
 import { useState, useMemo } from 'react';
-import ExerciseCard from './ExerciseCard.jsx';
+import ExerciseRow from './ExerciseRow.jsx';
 import { SearchIcon, HomeIcon, TreeIcon, WrenchIcon } from './Icons.jsx';
 import { exercises, LOCATION } from '../data/exercises.js';
 
 const FILTERS = [
-  { key: 'all',          label: 'All' },
-  { key: 'indoor',       label: 'Indoors',    icon: <HomeIcon size={12} /> },
-  { key: 'outdoor',      label: 'Outdoors',   icon: <TreeIcon size={12} /> },
-  { key: 'equipment',    label: 'Needs Gear', icon: <WrenchIcon size={12} /> },
-  { key: 'no-equipment', label: 'No Gear' },
+  { key: 'all', label: 'All' },
+  { key: 'indoor', label: 'Indoors', icon: <HomeIcon size={12} /> },
+  { key: 'outdoor', label: 'Outdoors', icon: <TreeIcon size={12} /> },
+  { key: 'equipment', label: 'Needs gear', icon: <WrenchIcon size={12} /> },
+  { key: 'no-equipment', label: 'No gear' },
 ];
 
-export default function AllExercises({ completions, onMarkDone, onUndo }) {
+export default function AllExercises({ completions, onOpenExercise }) {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
 
@@ -25,9 +25,9 @@ export default function AllExercises({ completions, onMarkDone, onUndo }) {
 
       const matchFilter =
         filter === 'all' ||
-        (filter === 'indoor'       && ex.location === LOCATION.INDOOR) ||
-        (filter === 'outdoor'      && ex.location === LOCATION.OUTDOOR) ||
-        (filter === 'equipment'    && ex.equipment.length > 0) ||
+        (filter === 'indoor' && ex.location === LOCATION.INDOOR) ||
+        (filter === 'outdoor' && ex.location === LOCATION.OUTDOOR) ||
+        (filter === 'equipment' && ex.equipment.length > 0) ||
         (filter === 'no-equipment' && ex.equipment.length === 0);
 
       return matchSearch && matchFilter;
@@ -38,7 +38,9 @@ export default function AllExercises({ completions, onMarkDone, onUndo }) {
     <div className="all-exercises">
       <div className="filter-bar">
         <div className="search-wrap">
-          <span className="search-icon"><SearchIcon size={16} /></span>
+          <span className="search-icon">
+            <SearchIcon size={16} />
+          </span>
           <input
             type="search"
             className="search-input"
@@ -54,7 +56,7 @@ export default function AllExercises({ completions, onMarkDone, onUndo }) {
               className={`filter-chip ${filter === key ? 'active' : ''}`}
               onClick={() => setFilter(key)}
             >
-              {icon && <span className="tag-icon">{icon}</span>}
+              {icon && <span className="filter-chip-icon">{icon}</span>}
               {label}
             </button>
           ))}
@@ -65,17 +67,20 @@ export default function AllExercises({ completions, onMarkDone, onUndo }) {
         {filtered.length} {filtered.length === 1 ? 'exercise' : 'exercises'}
       </p>
 
-      <div className="exercise-list">
-        {filtered.map((ex) => (
-          <ExerciseCard
-            key={ex.id}
-            exercise={ex}
-            completions={completions}
-            onMarkDone={onMarkDone}
-            onUndo={onUndo}
-          />
-        ))}
-      </div>
+      {filtered.length === 0 ? (
+        <p className="empty-state">No exercises match your filters.</p>
+      ) : (
+        <div className="row-group">
+          {filtered.map((ex) => (
+            <ExerciseRow
+              key={ex.id}
+              exercise={ex}
+              completions={completions}
+              onOpen={onOpenExercise}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

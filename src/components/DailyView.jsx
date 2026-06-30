@@ -1,26 +1,17 @@
 import { useMemo } from 'react';
-import ExerciseCard from './ExerciseCard.jsx';
+import ExerciseRow from './ExerciseRow.jsx';
 import { CheckIcon } from './Icons.jsx';
 import { exercises } from '../data/exercises.js';
-import { isDueToday } from '../utils/tracker.js';
+import { isDueToday, isToday } from '../utils/tracker.js';
 
-export default function DailyView({ completions, onMarkDone, onUndo }) {
+export default function DailyView({ completions, onOpenExercise }) {
   const today = new Date();
 
   const dateLabel = today.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-  }).toUpperCase();
-
-  const isToday = (iso) => {
-    const d = new Date(iso);
-    return (
-      d.getFullYear() === today.getFullYear() &&
-      d.getMonth() === today.getMonth() &&
-      d.getDate() === today.getDate()
-    );
-  };
+  });
 
   const { due, notDue } = useMemo(() => {
     const due = [];
@@ -65,17 +56,16 @@ export default function DailyView({ completions, onMarkDone, onUndo }) {
       ) : (
         <>
           <div className="section-label">
-            Due Now
+            Due now
             <span className="section-count">{due.length}</span>
           </div>
-          <div className="exercise-list">
+          <div className="row-group">
             {due.map((ex) => (
-              <ExerciseCard
+              <ExerciseRow
                 key={ex.id}
                 exercise={ex}
                 completions={completions}
-                onMarkDone={onMarkDone}
-                onUndo={onUndo}
+                onOpen={onOpenExercise}
               />
             ))}
           </div>
@@ -85,17 +75,16 @@ export default function DailyView({ completions, onMarkDone, onUndo }) {
       {notDue.length > 0 && (
         <>
           <div className="section-label" style={{ marginTop: 28 }}>
-            Completed / Not Due
+            Not due today
             <span className="section-count muted">{notDue.length}</span>
           </div>
-          <div className="exercise-list muted-list">
+          <div className="row-group muted-group">
             {notDue.map((ex) => (
-              <ExerciseCard
+              <ExerciseRow
                 key={ex.id}
                 exercise={ex}
                 completions={completions}
-                onMarkDone={onMarkDone}
-                onUndo={onUndo}
+                onOpen={onOpenExercise}
               />
             ))}
           </div>

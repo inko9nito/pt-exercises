@@ -15,6 +15,12 @@ export const LOCATION = {
   EITHER: 'either',
 };
 
+export const LOCATION_LABEL = {
+  [LOCATION.INDOOR]: 'Indoors',
+  [LOCATION.OUTDOOR]: 'Outdoors',
+  [LOCATION.EITHER]: 'Indoors or outdoors',
+};
+
 export const exercises = [
   {
     id: 1,
@@ -26,7 +32,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'A forelimb is lifted to shift the center of gravity and increase weight bearing on the other 3 limbs. If the animal pushes back excessively, the limb may be gently pulled to the side to alter the center of gravity back to the other limbs.',
-    images: ['/images/exercise_p1_img1.jpeg', '/images/exercise_p1_img2.jpeg'],
+    images: ['images/exercise_p1_img1.jpeg', 'images/exercise_p1_img2.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -40,7 +46,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'A rear limb is lifted to shift the center of gravity and increase weight bearing on the other 3 limbs. If the animal pushes back excessively, the limb may be gently pulled to the side to alter the center of gravity back to the other limbs.',
-    images: ['/images/exercise_p1_img3.jpeg', '/images/exercise_p1_img4.jpeg'],
+    images: ['images/exercise_p1_img3.jpeg', 'images/exercise_p1_img4.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -54,7 +60,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'Lift both diagonal limbs of the dog to force them to stand on the remaining two legs. Make sure they do not fall over. Start with a few seconds and gradually increase the time in the exercise.',
-    images: ['/images/exercise_p2_img1.jpeg', '/images/exercise_p2_img2.jpeg'],
+    images: ['images/exercise_p2_img1.jpeg', 'images/exercise_p2_img2.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -68,7 +74,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'Place the dog in a normal standing position (use pillows or a rolled blanket under the abdomen for support if needed), being sure that both rear feet are placed properly. Gently bounce the back end up and down for the recommended time. Use only enough gentle pressure to see the joints flex slightly.',
-    images: ['/images/exercise_p2_img3.jpeg', '/images/exercise_p2_img4.jpeg'],
+    images: ['images/exercise_p2_img3.jpeg', 'images/exercise_p2_img4.jpeg'],
     equipment: ['Pillows or rolled blanket (optional)'],
     location: LOCATION.INDOOR,
   },
@@ -82,7 +88,7 @@ export const exercises = [
     freqDays: 1,
     description:
       'Slowly walk the dog over an unstable surface such as a mattress, an inflatable mattress, a trampoline, or any surface that is unstable and challenges balance.',
-    images: ['/images/exercise_p3_img1.jpeg', '/images/exercise_p3_img2.jpeg'],
+    images: ['images/exercise_p3_img1.jpeg', 'images/exercise_p3_img2.jpeg'],
     equipment: ['Mattress / inflatable mattress / trampoline'],
     location: LOCATION.INDOOR,
   },
@@ -96,7 +102,7 @@ export const exercises = [
     freqDays: 3,
     description:
       'Walk the dog on leash in progressively larger or smaller circles as directed by the therapist.',
-    images: ['/images/exercise_p3_img3.jpeg', '/images/exercise_p3_img4.jpeg'],
+    images: ['images/exercise_p3_img3.jpeg', 'images/exercise_p3_img4.jpeg'],
     equipment: ['Leash'],
     location: LOCATION.EITHER,
   },
@@ -110,7 +116,7 @@ export const exercises = [
     freqDays: 4,
     description:
       'Walk the dog up a gradual incline or hill at a comfortable walking speed that encourages weight bearing on all four limbs and results in propulsion (pushing off) with the rear limbs.',
-    images: ['/images/exercise_p4_img1.jpeg', '/images/exercise_p4_img2.jpeg'],
+    images: ['images/exercise_p4_img1.jpeg', 'images/exercise_p4_img2.jpeg'],
     equipment: [],
     location: LOCATION.OUTDOOR,
   },
@@ -124,7 +130,7 @@ export const exercises = [
     freqDays: 3,
     description:
       'Walk the dog down a decline or hill at a comfortable walking speed that encourages weight bearing on all four limbs and results in strengthening and loading of the forelimbs.',
-    images: ['/images/exercise_p4_img3.jpeg', '/images/exercise_p4_img4.jpeg'],
+    images: ['images/exercise_p4_img3.jpeg', 'images/exercise_p4_img4.jpeg'],
     equipment: [],
     location: LOCATION.OUTDOOR,
   },
@@ -138,7 +144,7 @@ export const exercises = [
     freqDays: 2,
     description:
       "Vigorously scratch the top of the dog's rear end. Some dogs will find this delightful and will \"dance\" from side to side with the rear legs, shifting their weight.",
-    images: ['/images/exercise_p5_img1.jpeg', '/images/exercise_p5_img2.jpeg'],
+    images: ['images/exercise_p5_img1.jpeg', 'images/exercise_p5_img2.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -152,7 +158,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'While sitting on the stairs in front of or standing beside the dog, have the dog place the front legs on the first or second step. The back legs should remain on the ground. Use treats/praise to keep the dog in this position as directed.',
-    images: ['/images/exercise_p5_img3.jpeg', '/images/exercise_p5_img4.jpeg'],
+    images: ['images/exercise_p5_img3.jpeg', 'images/exercise_p5_img4.jpeg'],
     equipment: ['Stairs', 'Treats'],
     location: LOCATION.INDOOR,
   },
@@ -166,7 +172,7 @@ export const exercises = [
     maxPerDay: 3,
     description:
       'Have the dog standing square. Tickle the abdomen to raise and flatten the back.',
-    images: ['/images/exercise_p6_img1.jpeg', '/images/exercise_p6_img2.jpeg'],
+    images: ['images/exercise_p6_img1.jpeg', 'images/exercise_p6_img2.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -180,7 +186,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'Place the theraband just above the hock/tarsus and as the dog walks provide a slight resistance to the hip abductors by pulling into hip adduction.',
-    images: ['/images/exercise_p6_img3.jpeg', '/images/exercise_p6_img4.jpeg'],
+    images: ['images/exercise_p6_img3.jpeg', 'images/exercise_p6_img4.jpeg'],
     equipment: ['Theraband'],
     location: LOCATION.INDOOR,
   },
@@ -194,7 +200,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'Place the theraband just above the hock/tarsus and as the dog walks provide a slight resistance to the hip adductors by pulling into hip abduction.',
-    images: ['/images/exercise_p7_img1.jpeg', '/images/exercise_p7_img2.jpeg'],
+    images: ['images/exercise_p7_img1.jpeg', 'images/exercise_p7_img2.jpeg'],
     equipment: ['Theraband'],
     location: LOCATION.INDOOR,
   },
@@ -208,7 +214,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'Using a treat or a toy lead the dog through a figure of 8 pattern through your legs as shown.',
-    images: ['/images/exercise_p7_img3.jpeg', '/images/exercise_p7_img4.jpeg'],
+    images: ['images/exercise_p7_img3.jpeg', 'images/exercise_p7_img4.jpeg'],
     equipment: ['Treat or toy'],
     location: LOCATION.INDOOR,
   },
@@ -222,7 +228,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'Place your dog in a standing position and gently move his back end forward and backward, side to side and in small circles (both directions) to promote him to shift his weight to each hindlimb.',
-    images: ['/images/exercise_p8_img1.jpeg', '/images/exercise_p8_img2.jpeg'],
+    images: ['images/exercise_p8_img1.jpeg', 'images/exercise_p8_img2.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -236,7 +242,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'Place your dog in a standing position and gently move his front end forward and backward, side to side and in small circles (both directions) to promote him to shift his weight to each hindlimb.',
-    images: ['/images/exercise_p8_img3.jpeg', '/images/exercise_p8_img4.jpeg'],
+    images: ['images/exercise_p8_img3.jpeg', 'images/exercise_p8_img4.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -250,7 +256,7 @@ export const exercises = [
     freqDays: 1,
     description:
       'Using a treat or a favorite toy, have the dog follow the object, turning the head and neck to the side. Move the object/treat to the shoulders, front legs, hips and rear legs.',
-    images: ['/images/exercise_p9_img1.jpeg', '/images/exercise_p9_img2.jpeg'],
+    images: ['images/exercise_p9_img1.jpeg', 'images/exercise_p9_img2.jpeg'],
     equipment: ['Treat or toy'],
     location: LOCATION.INDOOR,
   },
@@ -264,7 +270,7 @@ export const exercises = [
     freqMinutes: 90,
     description:
       'Place the patient in a comfortable position lying on its side. Position yourself behind the back limbs. Place the upper hand on the lower portion of the thigh and the other hand on the lower limb, supporting all joints. Slowly and gently flex all of the joints, moving the entire limb through an exaggerated range of motion similar to pedaling a bicycle. Stop if the patient shows discomfort.',
-    images: ['/images/exercise_p10_img1.jpeg', '/images/exercise_p10_img2.jpeg'],
+    images: ['images/exercise_p10_img1.jpeg', 'images/exercise_p10_img2.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -277,7 +283,7 @@ export const exercises = [
     freqLabel: 'As needed',
     description:
       'Position the dog comfortably and be sure it is relaxed. Gently stroke and knead the muscles along the sides of the neck. This should never be painful for the dog. Can be done for 10–20 minutes.',
-    images: ['/images/exercise_p11_img1.jpeg', '/images/exercise_p11_img2.jpeg'],
+    images: ['images/exercise_p11_img1.jpeg', 'images/exercise_p11_img2.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
@@ -291,7 +297,7 @@ export const exercises = [
     freqDays: 4,
     description:
       'Position the dog comfortably (usually laying down) and be sure they are relaxed. Gently stroke and knead the muscles around the hip joint (commonly toward the front of the joint as pictured). This should never be painful for the dog. Can be done for 10–20 minutes.',
-    images: ['/images/exercise_p11_img3.jpeg', '/images/exercise_p11_img4.jpeg'],
+    images: ['images/exercise_p11_img3.jpeg', 'images/exercise_p11_img4.jpeg'],
     equipment: ['Foam pad or thin pillow (optional)'],
     location: LOCATION.INDOOR,
   },
