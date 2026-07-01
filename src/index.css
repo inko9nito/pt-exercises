@@ -265,21 +265,24 @@ button {
 
 /* Signals "extra/bonus work happened this day" at a glance. Bonus can't fill
    the ring (it's a separate currency from the prescribed plan), so it rides
-   as a corner badge that reads whether the ring is empty, partial, or full.
-   The ring-colour border punches it out cleanly against a full green ring. */
-.week-day-bonus-dot {
+   as a gold star badge at the corner that reads whether the ring is empty,
+   partial, or full. The background-coloured disc behind it punches it out
+   cleanly against a full green ring or a selected white cell. */
+.week-day-bonus-star {
   position: absolute;
-  top: -1px;
-  right: -1px;
-  width: 10px;
-  height: 10px;
+  top: -5px;
+  right: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #F59E0B;
+  background: var(--bg);
   border-radius: 50%;
-  background: var(--success);
-  border: 2px solid var(--bg);
+  padding: 1px;
 }
 
-.week-day.is-selected .week-day-bonus-dot {
-  border-color: var(--white);
+.week-day.is-selected .week-day-bonus-star {
+  background: var(--white);
 }
 
 .week-day-ring.is-done {

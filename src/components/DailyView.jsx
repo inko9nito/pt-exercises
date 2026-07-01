@@ -190,6 +190,11 @@ export default function DailyView({ completions, onOpenExercise }) {
             </>
           )}
 
+          <button className="add-exercise-btn" onClick={() => setShowAddSheet(true)}>
+            <PlusIcon size={16} />
+            Log another exercise
+          </button>
+
           {completedToday.length > 0 && (
             <>
               <div className="section-label" style={{ marginTop: 28 }}>
@@ -208,11 +213,6 @@ export default function DailyView({ completions, onOpenExercise }) {
               </div>
             </>
           )}
-
-          <button className="add-exercise-btn" onClick={() => setShowAddSheet(true)}>
-            <PlusIcon size={16} />
-            Log another exercise
-          </button>
         </>
       )}
 

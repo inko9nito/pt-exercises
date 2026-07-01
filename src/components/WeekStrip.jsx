@@ -1,7 +1,7 @@
 import { exercises } from '../data/exercises.js';
 import { dateKey, getPlanProgressOn } from '../utils/tracker.js';
 import { useSwipe } from '../utils/useSwipe.js';
-import { CheckIcon } from './Icons.jsx';
+import { CheckIcon, StarIcon } from './Icons.jsx';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -63,7 +63,11 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
               <span className="week-day-ring-hole">
                 {isDone ? <CheckIcon size={13} /> : date.getDate()}
               </span>
-              {hasBonus && <span className="week-day-bonus-dot" aria-label="Extra exercise logged" />}
+              {hasBonus && (
+                <span className="week-day-bonus-star" aria-label="Extra exercise logged">
+                  <StarIcon size={12} />
+                </span>
+              )}
             </span>
           </button>
         );
