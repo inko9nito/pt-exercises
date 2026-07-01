@@ -202,14 +202,6 @@ button {
   z-index: 5;
 }
 
-.pull-refresh-content {
-  /* Without a compositing hint, WebKit can drop an SVG child (the progress
-     ring) for a frame while its transform-animated ancestor is dragged —
-     it briefly un-renders instead of just repainting. Promoting this
-     element to its own layer up front avoids that flicker. */
-  will-change: transform;
-}
-
 .pull-refresh-content.is-snapping {
   transition: transform .25s ease;
 }
@@ -1241,6 +1233,19 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.progress-ring-track {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.5s ease;
+}
+
+.progress-ring-hole {
+  border-radius: 50%;
+  background: var(--white);
 }
 
 .progress-ring-value {
