@@ -1,5 +1,5 @@
 import ImageCarousel from './ImageCarousel.jsx';
-import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon } from './Icons.jsx';
+import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon, CheckCircleIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ, exercises } from '../data/exercises.js';
 import { isToday, isOptionalToday, isDueToday, getNextDueEstimate, formatLastDone } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
@@ -110,25 +110,31 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
 
       <div className="detail-action-bar">
         {showUpNext ? (
-          <>
-            <button className="up-next-card" onClick={() => onNext(nextExercise)}>
-              <span className="up-next-thumb">
-                <img src={assetUrl(nextExercise.images[0])} alt="" />
-              </span>
-              <span className="up-next-body">
-                <span className="up-next-label">Up next</span>
-                <span className="up-next-name">{nextExercise.name}</span>
-              </span>
-              <span className="row-chevron">
-                <ChevronRightIcon size={18} />
-              </span>
-            </button>
-            {history.length > 0 && (
-              <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
-                <UndoIcon size={18} />
+          <div className="up-next-wrap">
+            <div className="completed-status">
+              <CheckCircleIcon size={16} />
+              Completed
+            </div>
+            <div className="up-next-row">
+              <button className="up-next-card" onClick={() => onNext(nextExercise)}>
+                <span className="up-next-thumb">
+                  <img src={assetUrl(nextExercise.images[0])} alt="" />
+                </span>
+                <span className="up-next-body">
+                  <span className="up-next-label">Up next</span>
+                  <span className="up-next-name">{nextExercise.name}</span>
+                </span>
+                <span className="row-chevron">
+                  <ChevronRightIcon size={18} />
+                </span>
               </button>
-            )}
-          </>
+              {history.length > 0 && (
+                <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
+                  <UndoIcon size={18} />
+                </button>
+              )}
+            </div>
+          </div>
         ) : isMultipleDaily ? (
           <div className="session-boxes-wrap">
             <div className="session-boxes-header">
