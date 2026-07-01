@@ -52,7 +52,11 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
             className={`week-day ${isSelected ? 'is-selected' : ''}`}
             onClick={() => onSelectDate(key)}
           >
-            <span className={`week-day-label ${isSelected ? 'is-selected' : ''}`}>{WEEKDAY_LABELS[i]}</span>
+            <span
+              className={`week-day-label ${isSelected ? 'is-selected' : ''} ${isToday ? 'is-today' : ''}`}
+            >
+              {WEEKDAY_LABELS[i]}
+            </span>
             <span
               className={`week-day-ring ${isDone ? 'is-done' : ''}`}
               style={!isDone ? { background: `conic-gradient(var(--success) ${angle}deg, var(--border) 0deg)` } : undefined}
@@ -61,7 +65,6 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
                 {isDone ? <CheckIcon size={13} /> : date.getDate()}
               </span>
             </span>
-            <span className={`week-day-today-dot ${isToday ? 'is-today' : ''}`} />
           </button>
         );
       })}

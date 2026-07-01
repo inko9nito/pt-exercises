@@ -260,11 +260,19 @@ button {
   color: var(--ink-3);
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
 }
 
 .week-day-label.is-selected {
   font-weight: 800;
   color: var(--ink);
+}
+
+.week-day-label.is-today {
+  font-weight: 800;
+  color: var(--white);
+  background: var(--info);
 }
 
 .week-day-ring {
@@ -301,18 +309,6 @@ button {
 .week-day-ring.is-done .week-day-ring-hole {
   background: transparent;
   color: var(--white);
-}
-
-.week-day-today-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  margin-top: 2px;
-  background: transparent;
-}
-
-.week-day-today-dot.is-today {
-  background: var(--info);
 }
 
 .day-detail-view {
