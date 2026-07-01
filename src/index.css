@@ -124,61 +124,32 @@ button {
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 12px);
 }
 
-/* ============================================================
-   Pull to refresh
-   ============================================================ */
-.pull-refresh-scroll {
-  position: relative;
-}
-
-.pull-refresh-indicator {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  transition: opacity .15s ease;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.pull-refresh-content.is-snapping {
-  transition: transform .25s ease;
-}
-
-.ios-spinner {
-  position: relative;
-  width: 20px;
-  height: 20px;
-}
-
-.ios-spinner span {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 2px;
-  height: 6px;
-  margin-left: -1px;
-  border-radius: 1px;
-  background: var(--ink-3);
-  transform-origin: 1px 10px;
-  opacity: .3;
-}
-
-.ios-spinner.is-spinning span {
-  animation: ios-spinner-fade .9s linear infinite;
-}
-
-@keyframes ios-spinner-fade {
-  0% { opacity: 1; }
-  100% { opacity: .25; }
-}
-
 .build-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   text-align: center;
   font-size: 11px;
   font-weight: 500;
   color: var(--ink-3);
   padding: var(--space-5) 0 var(--space-4);
+}
+
+.refresh-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.refresh-button:active {
+  background: var(--border);
+  color: var(--ink-2);
 }
 
 /* ============================================================

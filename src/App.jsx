@@ -3,8 +3,7 @@ import DailyView from './components/DailyView.jsx';
 import AllExercises from './components/AllExercises.jsx';
 import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
-import PullToRefresh from './components/PullToRefresh.jsx';
-import { CalendarIcon, ListIcon, TrendingUpIcon } from './components/Icons.jsx';
+import { CalendarIcon, ListIcon, TrendingUpIcon, RefreshIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
 import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
 
@@ -26,7 +25,7 @@ function getInitialTab() {
 // __BUILD_TIME__/__BUILD_COMMIT__ are injected at build time (see
 // vite.config.js) so it's obvious on-device whether a stale, cached bundle
 // is being viewed instead of the latest deploy.
-function BuildInfo() {
+function BuildInfo({ onRefresh }) {
   const built = new Date(__BUILD_TIME__).toLocaleString([], {
     month: 'short',
     day: 'numeric',
@@ -35,7 +34,12 @@ function BuildInfo() {
   });
   return (
     <div className="build-info">
-      Build {__BUILD_COMMIT__} · {built}
+      <span>
+        Build {__BUILD_COMMIT__} · {built}
+      </span>
+      <button className="refresh-button" onClick={onRefresh} aria-label="Refresh">
+        <RefreshIcon size={13} />
+      </button>
     </div>
   );
 }
@@ -131,20 +135,15 @@ export default function App() {
     window.history.replaceState(window.history.state, '', url.toString());
   }, []);
 
-  // Pull to refresh is meant as an escape hatch for "is this actually the
-  // latest build" — a plain data resync doesn't help if the stale part is
-  // the JS/CSS bundle itself. Every build's JS/CSS gets a unique
+  // The footer's refresh button is an escape hatch for "is this actually
+  // the latest build" — a plain data resync doesn't help if the stale part
+  // is the JS/CSS bundle itself. Every build's JS/CSS gets a unique
   // content-hash filename, so a stale disk cache can never serve old code
   // under a new build's name — the only thing that can go stale is
   // index.html itself, and a normal reload already re-fetches that. This
-  // used to also nuke Cache Storage/service workers and navigate to a
-  // manually cache-busted URL via location.replace(), but this app has
-  // never registered a service worker (that was defensive code for
-  // something that doesn't exist), and rewriting the URL that way left a
-  // stray "_r=..." param stuck in the address bar permanently and broke
-  // back navigation. A plain reload is simpler and doesn't have either
-  // problem.
-  const handleRefresh = useCallback(async () => {
+  // app has never registered a service worker, so there's nothing else to
+  // clear; a plain reload is enough.
+  const handleRefresh = useCallback(() => {
     window.location.reload();
   }, []);
 
@@ -181,7 +180,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <PullToRefresh onRefresh={handleRefresh}>
+      <main className="app-main">
         {tab === TAB_TODAY && (
           <DailyView completions={completions} onOpenExercise={openExercise} />
         )}
@@ -189,8 +188,8 @@ export default function App() {
           <AllExercises completions={completions} onOpenExercise={openExercise} />
         )}
         {tab === TAB_PROGRESS && <ProgressView completions={completions} />}
-        <BuildInfo />
-      </PullToRefresh>
+        <BuildInfo onRefresh={handleRefresh} />
+      </main>
 
       <nav className="bottom-nav">
         <button
