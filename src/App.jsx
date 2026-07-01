@@ -6,12 +6,7 @@ import ExerciseDetail from './components/ExerciseDetail.jsx';
 import PullToRefresh from './components/PullToRefresh.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, ActivityIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
-import {
-  subscribeToCompletions,
-  subscribeToConnectionStatus,
-  pushCompletions,
-  fetchCompletionsOnce,
-} from './utils/sync.js';
+import { subscribeToCompletions, subscribeToConnectionStatus, pushCompletions } from './utils/sync.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
@@ -103,16 +98,29 @@ export default function App() {
     window.history.back();
   }, []);
 
-  // Firebase's one-shot get() can hang rather than reject when the device is
-  // offline, which would otherwise leave the pull-to-refresh spinner stuck
-  // forever — race it against a timeout so the gesture always settles.
+  // Pull to refresh is meant as an escape hatch for "is this actually the
+  // latest build" — a plain data resync doesn't help if the stale part is
+  // the JS/CSS bundle itself (the known iOS home-screen web-clip caching
+  // problem). So instead of just re-fetching completions, force a real
+  // reload: drop any Cache Storage entries/service workers (in case one is
+  // ever added later) and navigate to a cache-busted URL so the browser
+  // can't serve a cached index.html or asset bundle.
   const handleRefresh = useCallback(async () => {
-    const timeout = new Promise((resolve) => setTimeout(resolve, 4000, null));
-    const remote = await Promise.race([fetchCompletionsOnce(), timeout]);
-    if (remote) {
-      setCompletions(remote);
-      saveCompletions(remote);
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((reg) => reg.unregister()));
+      }
+    } catch {
+      // best effort — reload regardless
     }
+    const url = new URL(window.location.href);
+    url.searchParams.set('_r', Date.now().toString());
+    window.location.replace(url.toString());
   }, []);
 
   useEffect(() => {
