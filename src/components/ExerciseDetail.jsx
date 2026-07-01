@@ -61,7 +61,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
 
           {optional && <span className="optional-badge">Optional today — already done yesterday</span>}
 
-          {(exercise.sets || exercise.reps) && (
+          {(exercise.sets || exercise.reps || exercise.duration) && (
             <div className="detail-stats-row">
               {exercise.sets && (
                 <span className="detail-stat-inline">
@@ -71,6 +71,14 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
               {exercise.reps && (
                 <span className="detail-stat-inline">
                   <strong>{exercise.reps}</strong> {pluralize(exercise.reps, 'Rep', 'Reps')}
+                </span>
+              )}
+              {exercise.duration && (
+                // Some exercises are a timed hold/massage rather than discrete
+                // sets/reps — the duration string already carries its own
+                // unit ("10–20 min"), so it doesn't need a Set/Rep-style label.
+                <span className="detail-stat-inline">
+                  <strong>{exercise.duration}</strong>
                 </span>
               )}
             </div>

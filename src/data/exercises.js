@@ -109,8 +109,7 @@ export const exercises = [
   {
     id: 7,
     name: 'Slow hill climbing',
-    sets: '5 min max',
-    reps: null,
+    duration: '5 min max',
     freqType: FREQ.TWICE_WEEKLY,
     freqLabel: '1–2× per week',
     freqDays: 4,
@@ -285,8 +284,7 @@ export const exercises = [
   {
     id: 19,
     name: 'General neck massage',
-    sets: '10–20 min',
-    reps: null,
+    duration: '10–20 min',
     freqType: FREQ.AS_NEEDED,
     freqLabel: 'As needed',
     description:
