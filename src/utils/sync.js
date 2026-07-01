@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { getDatabase, ref, onValue, get, set } from 'firebase/database';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyD-CxVuiQ4k94KKixh4y8iPHRxlODCXY24',
@@ -35,4 +35,12 @@ export function subscribeToConnectionStatus(onChange) {
 
 export function pushCompletions(completions) {
   return set(completionsRef, completions);
+}
+
+// One-shot read for pull-to-refresh — the live subscription already keeps
+// completions current, but a manual pull should force a fresh fetch rather
+// than just replaying whatever the socket last delivered.
+export async function fetchCompletionsOnce() {
+  const snapshot = await get(completionsRef);
+  return snapshot.val() || {};
 }

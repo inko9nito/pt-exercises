@@ -3,9 +3,15 @@ import DailyView from './components/DailyView.jsx';
 import AllExercises from './components/AllExercises.jsx';
 import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
+import PullToRefresh from './components/PullToRefresh.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, ActivityIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
-import { subscribeToCompletions, subscribeToConnectionStatus, pushCompletions } from './utils/sync.js';
+import {
+  subscribeToCompletions,
+  subscribeToConnectionStatus,
+  pushCompletions,
+  fetchCompletionsOnce,
+} from './utils/sync.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
@@ -80,6 +86,18 @@ export default function App() {
     window.history.back();
   }, []);
 
+  // Firebase's one-shot get() can hang rather than reject when the device is
+  // offline, which would otherwise leave the pull-to-refresh spinner stuck
+  // forever — race it against a timeout so the gesture always settles.
+  const handleRefresh = useCallback(async () => {
+    const timeout = new Promise((resolve) => setTimeout(resolve, 4000, null));
+    const remote = await Promise.race([fetchCompletionsOnce(), timeout]);
+    if (remote) {
+      setCompletions(remote);
+      saveCompletions(remote);
+    }
+  }, []);
+
   useEffect(() => {
     const onPopState = () => {
       setDetailClosing(true);
@@ -114,7 +132,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="app-main">
+      <PullToRefresh onRefresh={handleRefresh}>
         {tab === TAB_TODAY && (
           <DailyView completions={completions} onOpenExercise={openExercise} />
         )}
@@ -122,7 +140,7 @@ export default function App() {
           <AllExercises completions={completions} onOpenExercise={openExercise} />
         )}
         {tab === TAB_PROGRESS && <ProgressView completions={completions} />}
-      </main>
+      </PullToRefresh>
 
       <nav className="bottom-nav">
         <button
