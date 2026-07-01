@@ -229,6 +229,78 @@ button {
   padding: var(--space-4) var(--space-4) 0;
 }
 
+/* ============================================================
+   Week strip (sits directly on the page, no card wrapper)
+   ============================================================ */
+.week-strip {
+  display: flex;
+  justify-content: space-between;
+  touch-action: pan-y;
+  margin-bottom: var(--space-5);
+}
+
+.week-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  padding: var(--space-2) 2px;
+  border-radius: var(--radius);
+}
+
+.week-day.is-selected {
+  background: var(--accent-soft);
+}
+
+.week-day-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.week-day-label.is-today {
+  color: var(--accent);
+}
+
+.week-day-ring {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.week-day-ring.is-done {
+  background: var(--success);
+}
+
+.week-day-ring-hole {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.week-day-ring.is-done .week-day-ring-hole {
+  background: transparent;
+  color: var(--white);
+}
+
+.day-detail-view {
+  padding-bottom: var(--space-4);
+}
+
 .daily-hero {
   background: var(--white);
   border-radius: var(--radius);

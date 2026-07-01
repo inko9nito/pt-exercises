@@ -1,11 +1,32 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import ExerciseRow from './ExerciseRow.jsx';
+import WeekStrip from './WeekStrip.jsx';
 import { CheckIcon } from './Icons.jsx';
 import { exercises, FREQ } from '../data/exercises.js';
-import { isDueToday, isOptionalToday, isToday, getTodayCount } from '../utils/tracker.js';
+import {
+  isDueToday,
+  isOptionalToday,
+  isToday,
+  getTodayCount,
+  dateKey,
+  getCompletionDateMap,
+} from '../utils/tracker.js';
+
+function formatDateLong(key) {
+  const date = new Date(`${key}T00:00:00`);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+}
 
 export default function DailyView({ completions, onOpenExercise }) {
   const today = new Date();
+  const todayKey = dateKey(today);
+  const [selectedDate, setSelectedDate] = useState(todayKey);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const isViewingToday = selectedDate === todayKey;
 
   const dateLabel = today.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -56,83 +77,117 @@ export default function DailyView({ completions, onOpenExercise }) {
 
   const progressPct = Math.round((doneCount / exercises.length) * 100);
 
+  // Due/optional/not-due status is only meaningful for today — a past or
+  // future day in the week strip just shows what was actually logged then,
+  // the same read-only "day detail" pattern the Progress tab's calendar uses.
+  const dateMap = useMemo(() => getCompletionDateMap(completions, exercises), [completions]);
+  const selectedDayItems = !isViewingToday ? dateMap.get(selectedDate) || [] : null;
+
   return (
     <div className="daily-view">
-      <div className="daily-hero">
-        <div className="daily-date">{dateLabel}</div>
-        <div className="daily-count-row">
-          <span className="daily-count-done">{doneCount}</span>
-          <span className="daily-count-sep">/</span>
-          <span className="daily-count-total">{exercises.length}</span>
-          <span className="daily-count-label">exercises done today</span>
-        </div>
-        <div className="progress-track">
-          <div className="progress-fill" style={{ width: `${progressPct}%` }} />
-        </div>
-      </div>
+      <WeekStrip
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        weekOffset={weekOffset}
+        onWeekChange={setWeekOffset}
+        completions={completions}
+      />
 
-      {due.length === 0 ? (
-        <div className="all-done-state">
-          <div className="all-done-icon">
-            <CheckIcon size={26} />
-          </div>
-          <p className="all-done-title">All caught up</p>
-          <p className="all-done-sub">Check back later for Domino's next session.</p>
+      {!isViewingToday ? (
+        <div className="day-detail-view">
+          <p className="day-detail-title">{formatDateLong(selectedDate)}</p>
+          {selectedDayItems.length > 0 ? (
+            <div className="day-detail-list">
+              {selectedDayItems.map((item, i) => (
+                <div key={i} className="day-detail-item">
+                  <span className="day-detail-name">{item.name}</span>
+                  <span className="day-detail-time">{item.time}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="day-detail-empty">Nothing logged this day.</p>
+          )}
         </div>
       ) : (
         <>
-          <div className="section-label">
-            To do
-            <span className="section-count">{due.length}</span>
+          <div className="daily-hero">
+            <div className="daily-date">{dateLabel}</div>
+            <div className="daily-count-row">
+              <span className="daily-count-done">{doneCount}</span>
+              <span className="daily-count-sep">/</span>
+              <span className="daily-count-total">{exercises.length}</span>
+              <span className="daily-count-label">exercises done today</span>
+            </div>
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+            </div>
           </div>
-          <div className="row-group">
-            {due.map((ex) => (
-              <ExerciseRow
-                key={ex.id}
-                exercise={ex}
-                completions={completions}
-                onOpen={onOpenExercise}
-              />
-            ))}
-          </div>
-        </>
-      )}
 
-      {optional.length > 0 && (
-        <>
-          <div className="section-label" style={{ marginTop: 28 }}>
-            Optional
-            <span className="section-count">{optional.length}</span>
-          </div>
-          <div className="row-group">
-            {optional.map((ex) => (
-              <ExerciseRow
-                key={ex.id}
-                exercise={ex}
-                completions={completions}
-                onOpen={onOpenExercise}
-              />
-            ))}
-          </div>
-        </>
-      )}
+          {due.length === 0 ? (
+            <div className="all-done-state">
+              <div className="all-done-icon">
+                <CheckIcon size={26} />
+              </div>
+              <p className="all-done-title">All caught up</p>
+              <p className="all-done-sub">Check back later for Domino's next session.</p>
+            </div>
+          ) : (
+            <>
+              <div className="section-label">
+                To do
+                <span className="section-count">{due.length}</span>
+              </div>
+              <div className="row-group">
+                {due.map((ex) => (
+                  <ExerciseRow
+                    key={ex.id}
+                    exercise={ex}
+                    completions={completions}
+                    onOpen={onOpenExercise}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
-      {completedToday.length > 0 && (
-        <>
-          <div className="section-label" style={{ marginTop: 28 }}>
-            Completed today
-            <span className="section-count">{completedToday.length}</span>
-          </div>
-          <div className="row-group">
-            {completedToday.map((ex) => (
-              <ExerciseRow
-                key={ex.id}
-                exercise={ex}
-                completions={completions}
-                onOpen={onOpenExercise}
-              />
-            ))}
-          </div>
+          {optional.length > 0 && (
+            <>
+              <div className="section-label" style={{ marginTop: 28 }}>
+                Optional
+                <span className="section-count">{optional.length}</span>
+              </div>
+              <div className="row-group">
+                {optional.map((ex) => (
+                  <ExerciseRow
+                    key={ex.id}
+                    exercise={ex}
+                    completions={completions}
+                    onOpen={onOpenExercise}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {completedToday.length > 0 && (
+            <>
+              <div className="section-label" style={{ marginTop: 28 }}>
+                Completed today
+                <span className="section-count">{completedToday.length}</span>
+              </div>
+              <div className="row-group">
+                {completedToday.map((ex) => (
+                  <ExerciseRow
+                    key={ex.id}
+                    exercise={ex}
+                    completions={completions}
+                    onOpen={onOpenExercise}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
