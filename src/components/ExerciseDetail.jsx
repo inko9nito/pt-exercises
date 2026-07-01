@@ -180,6 +180,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
               className={`btn-complete ${completedToday ? 'completed' : ''}`}
               onClick={() => onMarkDone(exercise.id)}
             >
+              <CheckIcon size={18} />
               {completedToday ? 'Completed' : 'Mark complete'}
             </button>
             {history.length > 0 && (

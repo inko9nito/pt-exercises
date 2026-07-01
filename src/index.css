@@ -923,6 +923,10 @@ button {
    ============================================================ */
 .btn-complete {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 13px var(--space-4);
   background: var(--accent);
   color: var(--white);
