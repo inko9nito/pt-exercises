@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { normalizeCompletions } from './tracker.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyD-CxVuiQ4k94KKixh4y8iPHRxlODCXY24',
@@ -18,7 +19,7 @@ const connectedRef = ref(db, '.info/connected');
 
 export function subscribeToCompletions(onChange) {
   return onValue(completionsRef, (snapshot) => {
-    onChange(snapshot.val() || {});
+    onChange(normalizeCompletions(snapshot.val()));
   });
 }
 

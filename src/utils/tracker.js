@@ -2,10 +2,23 @@ import { FREQ } from '../data/exercises.js';
 
 const STORAGE_KEY = 'domino_completions';
 
+// Firebase RTDB can hand back null for a per-exercise history that's been
+// emptied out entirely (e.g. every session for it was undone) rather than
+// [], and that malformed shape gets persisted to localStorage via
+// saveCompletions() just like anything else — so this needs to run on data
+// coming from either source, not just fresh Firebase snapshots.
+export function normalizeCompletions(raw) {
+  const normalized = {};
+  for (const [id, history] of Object.entries(raw || {})) {
+    normalized[id] = Array.isArray(history) ? history : [];
+  }
+  return normalized;
+}
+
 export function loadCompletions() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    return normalizeCompletions(raw ? JSON.parse(raw) : {});
   } catch {
     return {};
   }
@@ -145,13 +158,16 @@ export function formatLastDone(date) {
 }
 
 export function getTotalSessions(completions) {
-  return Object.values(completions).reduce((sum, arr) => sum + arr.length, 0);
+  // Firebase RTDB can hand back null for a history that's been emptied out
+  // (e.g. every session for that exercise was undone) rather than [], so
+  // this can't assume every value is an array.
+  return Object.values(completions).reduce((sum, arr) => sum + (arr || []).length, 0);
 }
 
 export function getStreak(completions) {
   const dates = new Set();
   for (const arr of Object.values(completions)) {
-    for (const iso of arr) dates.add(dateKey(new Date(iso)));
+    for (const iso of arr || []) dates.add(dateKey(new Date(iso)));
   }
 
   const cursor = new Date();
