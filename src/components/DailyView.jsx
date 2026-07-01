@@ -13,14 +13,20 @@ export default function DailyView({ completions, onOpenExercise }) {
     day: 'numeric',
   });
 
-  const { due, notDue } = useMemo(() => {
+  const { due, completedToday, notDue } = useMemo(() => {
     const due = [];
+    const completedToday = [];
     const notDue = [];
     for (const ex of exercises) {
-      if (isDueToday(ex, completions)) due.push(ex);
-      else notDue.push(ex);
+      if (isDueToday(ex, completions)) {
+        due.push(ex);
+      } else {
+        const hist = completions[String(ex.id)] || [];
+        if (hist.some(isToday)) completedToday.push(ex);
+        else notDue.push(ex);
+      }
     }
-    return { due, notDue };
+    return { due, completedToday, notDue };
   }, [completions]);
 
   const doneCount = exercises.reduce((acc, ex) => {
@@ -61,6 +67,25 @@ export default function DailyView({ completions, onOpenExercise }) {
           </div>
           <div className="row-group">
             {due.map((ex) => (
+              <ExerciseRow
+                key={ex.id}
+                exercise={ex}
+                completions={completions}
+                onOpen={onOpenExercise}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {completedToday.length > 0 && (
+        <>
+          <div className="section-label" style={{ marginTop: 28 }}>
+            Completed today
+            <span className="section-count success">{completedToday.length}</span>
+          </div>
+          <div className="row-group">
+            {completedToday.map((ex) => (
               <ExerciseRow
                 key={ex.id}
                 exercise={ex}
