@@ -385,11 +385,6 @@ button {
   border-radius: var(--radius-pill);
 }
 
-.section-count.muted {
-  background: var(--border-strong);
-  color: var(--ink-2);
-}
-
 .section-count.success {
   background: var(--success);
 }
@@ -441,10 +436,6 @@ button {
   border: 1px solid var(--border);
   overflow: hidden;
   margin-bottom: var(--space-3);
-}
-
-.muted-group {
-  opacity: 0.6;
 }
 
 .exercise-row {

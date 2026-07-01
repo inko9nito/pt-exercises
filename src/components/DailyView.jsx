@@ -13,11 +13,10 @@ export default function DailyView({ completions, onOpenExercise }) {
     day: 'numeric',
   });
 
-  const { due, optional, completedToday, notDue } = useMemo(() => {
+  const { due, optional, completedToday } = useMemo(() => {
     const due = [];
     const optional = [];
     const completedToday = [];
-    const notDue = [];
 
     for (const ex of exercises) {
       const hist = completions[String(ex.id)] || [];
@@ -42,12 +41,12 @@ export default function DailyView({ completions, onOpenExercise }) {
         if (hist.some(isToday)) completedToday.push(ex);
       } else if (hist.some(isToday)) {
         completedToday.push(ex);
-      } else {
-        notDue.push(ex);
       }
+      // Otherwise it's simply not due today — nothing to show here; it's
+      // still visible any time in "All exercises".
     }
 
-    return { due, optional, completedToday, notDue };
+    return { due, optional, completedToday };
   }, [completions]);
 
   const doneCount = exercises.reduce((acc, ex) => {
@@ -126,25 +125,6 @@ export default function DailyView({ completions, onOpenExercise }) {
           </div>
           <div className="row-group">
             {completedToday.map((ex) => (
-              <ExerciseRow
-                key={ex.id}
-                exercise={ex}
-                completions={completions}
-                onOpen={onOpenExercise}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      {notDue.length > 0 && (
-        <>
-          <div className="section-label" style={{ marginTop: 28 }}>
-            Not due today
-            <span className="section-count muted">{notDue.length}</span>
-          </div>
-          <div className="row-group muted-group">
-            {notDue.map((ex) => (
               <ExerciseRow
                 key={ex.id}
                 exercise={ex}
