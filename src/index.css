@@ -789,26 +789,26 @@ button {
 }
 
 .session-box.next {
+  background: var(--white);
+  border-color: var(--ink);
+  border-width: 2px;
+  color: var(--ink);
+}
+
+.session-box.next:active {
+  background: var(--bg);
+  transform: scale(0.97);
+}
+
+.session-box.done {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--white);
 }
 
-.session-box.next:active {
+.session-box.done:active {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  transform: scale(0.97);
-}
-
-.session-box.done {
-  background: var(--success);
-  border-color: var(--success);
-  color: var(--white);
-}
-
-.session-box.done:active {
-  background: #15803D;
-  border-color: #15803D;
   transform: scale(0.97);
 }
 
@@ -927,26 +927,30 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 13px var(--space-4);
-  background: var(--accent);
-  color: var(--white);
+  padding: 12px var(--space-4);
+  background: var(--white);
+  border: 2px solid var(--ink);
+  color: var(--ink);
   font-size: var(--text-base);
   font-weight: 700;
   border-radius: var(--radius-sm);
-  transition: background .15s, transform .1s;
+  transition: background .15s, border-color .15s, color .15s, transform .1s;
 }
 
 .btn-complete:active {
-  background: var(--accent-hover);
+  background: var(--bg);
   transform: scale(0.98);
 }
 
 .btn-complete.completed {
-  background: var(--success);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--white);
 }
 
 .btn-complete.completed:active {
-  background: #15803D;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .btn-undo {
