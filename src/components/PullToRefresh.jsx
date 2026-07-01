@@ -53,20 +53,24 @@ export default function PullToRefresh({ onRefresh, children }) {
     const el = containerRef.current;
     if (!el) return;
 
-    function onTouchStart(e) {
-      if (refreshingRef.current) return;
-      if (el.scrollTop <= 0) {
-        startYRef.current = e.touches[0].clientY;
-        draggingRef.current = true;
-        setSnapping(false);
-      }
+    // touchmove is only ever registered non-passive for the duration of an
+    // actual pull-from-top gesture, and removed the instant it ends or is
+    // aborted. A non-passive touchmove listener that stays attached for the
+    // container's whole lifetime forces the browser to run it synchronously
+    // on *every* scroll tick (not just at the top) before it can commit to
+    // scrolling, which is what caused the hesitation on ordinary scrolling.
+    function endDrag() {
+      draggingRef.current = false;
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', endDrag);
+      el.removeEventListener('touchcancel', endDrag);
     }
 
     function onTouchMove(e) {
       if (!draggingRef.current || refreshingRef.current) return;
       const delta = e.touches[0].clientY - startYRef.current;
       if (delta <= 0) {
-        draggingRef.current = false;
+        endDrag();
         setPull(0);
         return;
       }
@@ -75,8 +79,9 @@ export default function PullToRefresh({ onRefresh, children }) {
     }
 
     function onTouchEnd() {
-      if (!draggingRef.current) return;
-      draggingRef.current = false;
+      const wasDragging = draggingRef.current;
+      endDrag();
+      if (!wasDragging) return;
       if (pullRef.current >= PULL_THRESHOLD) {
         triggerRefresh();
       } else {
@@ -85,13 +90,20 @@ export default function PullToRefresh({ onRefresh, children }) {
       }
     }
 
+    function onTouchStart(e) {
+      if (refreshingRef.current || el.scrollTop > 0) return;
+      startYRef.current = e.touches[0].clientY;
+      draggingRef.current = true;
+      setSnapping(false);
+      el.addEventListener('touchmove', onTouchMove, { passive: false });
+      el.addEventListener('touchend', onTouchEnd, { passive: true });
+      el.addEventListener('touchcancel', endDrag, { passive: true });
+    }
+
     el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: true });
     return () => {
       el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
+      endDrag();
     };
   }, [triggerRefresh, setPull]);
 
