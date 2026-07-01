@@ -35,6 +35,11 @@ export default function DailyView({ completions, onOpenExercise }) {
       } else if (dueToday) {
         if (isOptionalToday(ex, completions)) optional.push(ex);
         else due.push(ex);
+        // An hourly exercise done earlier today can already be due again by
+        // the time its cooldown elapses — keep it visible in "Completed
+        // today" too instead of dropping it the moment it reappears in "to
+        // do", otherwise the earlier session disappears without a trace.
+        if (hist.some(isToday)) completedToday.push(ex);
       } else if (hist.some(isToday)) {
         completedToday.push(ex);
       } else {

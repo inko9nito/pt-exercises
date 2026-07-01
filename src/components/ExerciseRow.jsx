@@ -13,6 +13,10 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
   const optional = isOptionalToday(exercise, completions);
   const due = isDueToday(exercise, completions);
   const nextDue = getNextDueEstimate(exercise, completions);
+  const lastDoneAt =
+    todayCount > 0
+      ? new Date(history[history.length - 1]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : null;
 
   return (
     <button className="exercise-row" onClick={() => onOpen(exercise)}>
@@ -24,6 +28,8 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
         <span className="row-meta">
           {optional ? (
             <span className="optional-tag">Optional today</span>
+          ) : due && lastDoneAt ? (
+            <span className="optional-tag">Last done {lastDoneAt}</span>
           ) : nextDue ? (
             <span className="optional-tag">
               Next due ~{nextDue.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -41,7 +47,10 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
         </span>
       )}
       {isOpenEnded && todayCount > 0 && (
-        <span className="row-status-badge">{todayCount}×</span>
+        <span className="row-status-complete">
+          <CheckCircleIcon size={18} />
+          <span className="row-status-count">{todayCount}×</span>
+        </span>
       )}
       {!isMultipleDaily && !isOpenEnded && !due && todayCount > 0 && (
         <span className="row-status-check">
