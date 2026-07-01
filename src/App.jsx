@@ -47,13 +47,15 @@ export default function App() {
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [detailClosing, setDetailClosing] = useState(false);
   const closeTimerRef = useRef(null);
-  // Firebase's onValue can fire with an empty snapshot before a real
-  // connection is established (it doesn't wait to confirm — this is most
-  // visible right after a hard reload, which wipes the SDK's in-memory
-  // cache along with everything else). Without this guard, that placeholder
-  // empty snapshot silently stomps the good data just loaded from
-  // localStorage. Once we've seen real data or a confirmed connection,
-  // trust the listener fully — including later legitimate empty states.
+  // Firebase's onValue can fire with an empty placeholder snapshot before
+  // its *authoritative* payload arrives (most visible right after a hard
+  // reload, which wipes the SDK's in-memory cache along with everything
+  // else). ".info/connected" flipping true only proves the socket is up —
+  // it doesn't prove the completions listener's real payload has landed
+  // yet, so it can't be used to grant trust (that race is exactly what let
+  // an empty snapshot stomp good localStorage data even after this guard
+  // was first added). Only real, non-empty data is allowed to establish
+  // trust; once it has, later legitimate empty states are trusted too.
   const trustedRemoteRef = useRef(false);
 
   // Firebase is the source of truth; localStorage is just a fast local
@@ -63,13 +65,12 @@ export default function App() {
     const unsubData = subscribeToCompletions((remote) => {
       const remoteIsEmpty = Object.keys(remote).length === 0;
       if (remoteIsEmpty && !trustedRemoteRef.current) return;
-      trustedRemoteRef.current = true;
+      if (!remoteIsEmpty) trustedRemoteRef.current = true;
       setCompletions(remote);
       saveCompletions(remote);
     });
     const unsubConnection = subscribeToConnectionStatus((isConnected) => {
       setSynced(isConnected);
-      if (isConnected) trustedRemoteRef.current = true;
     });
     return () => {
       unsubData();
