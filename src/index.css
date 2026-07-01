@@ -250,7 +250,8 @@ button {
 }
 
 .week-day.is-selected {
-  background: var(--accent-soft);
+  background: var(--white);
+  box-shadow: var(--shadow-card);
 }
 
 .week-day-label {
@@ -261,6 +262,11 @@ button {
   letter-spacing: 0.02em;
 }
 
+.week-day-label.is-selected {
+  font-weight: 800;
+  color: var(--ink);
+}
+
 .week-day-ring {
   width: 34px;
   height: 34px;
@@ -268,11 +274,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
-}
-
-.week-day-ring.is-today {
-  box-shadow: 0 0 0 2px var(--accent);
+  transition: background 0.3s ease;
 }
 
 .week-day-ring.is-done {
@@ -290,6 +292,10 @@ button {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-2);
+}
+
+.week-day.is-selected .week-day-ring-hole {
+  background: var(--white);
 }
 
 .week-day-ring.is-done .week-day-ring-hole {

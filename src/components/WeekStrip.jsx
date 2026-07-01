@@ -28,7 +28,6 @@ function dayDoneFraction(date, completions) {
 }
 
 export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions }) {
-  const todayKey = dateKey(new Date());
   const weekDates = getWeekDates(weekOffset);
 
   const swipeHandlers = useSwipe({
@@ -40,7 +39,6 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
     <div className="week-strip" {...swipeHandlers}>
       {weekDates.map((date, i) => {
         const key = dateKey(date);
-        const isToday = key === todayKey;
         const isSelected = key === selectedDate;
         const fraction = dayDoneFraction(date, completions);
         const isDone = fraction >= 1;
@@ -52,9 +50,9 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
             className={`week-day ${isSelected ? 'is-selected' : ''}`}
             onClick={() => onSelectDate(key)}
           >
-            <span className="week-day-label">{WEEKDAY_LABELS[i]}</span>
+            <span className={`week-day-label ${isSelected ? 'is-selected' : ''}`}>{WEEKDAY_LABELS[i]}</span>
             <span
-              className={`week-day-ring ${isDone ? 'is-done' : ''} ${isToday ? 'is-today' : ''}`}
+              className={`week-day-ring ${isDone ? 'is-done' : ''}`}
               style={!isDone ? { background: `conic-gradient(var(--success) ${angle}deg, var(--border) 0deg)` } : undefined}
             >
               <span className="week-day-ring-hole">
