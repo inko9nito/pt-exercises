@@ -18,6 +18,23 @@ const TAB_ALL = 'all';
 const TAB_PROGRESS = 'progress';
 const DETAIL_EXIT_MS = 300;
 
+// __BUILD_TIME__/__BUILD_COMMIT__ are injected at build time (see
+// vite.config.js) so it's obvious on-device whether a stale, cached bundle
+// is being viewed instead of the latest deploy.
+function BuildInfo() {
+  const built = new Date(__BUILD_TIME__).toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return (
+    <div className="build-info">
+      Build {__BUILD_COMMIT__} · {built}
+    </div>
+  );
+}
+
 export default function App() {
   const [tab, setTab] = useState(TAB_TODAY);
   const [completions, setCompletions] = useState(() => loadCompletions());
@@ -140,6 +157,7 @@ export default function App() {
           <AllExercises completions={completions} onOpenExercise={openExercise} />
         )}
         {tab === TAB_PROGRESS && <ProgressView completions={completions} />}
+        <BuildInfo />
       </PullToRefresh>
 
       <nav className="bottom-nav">
