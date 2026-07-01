@@ -8,7 +8,8 @@ import { Component } from 'react';
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { error: null };
+    this.state = { error: null, copied: false };
+    this.handleCopy = this.handleCopy.bind(this);
   }
 
   static getDerivedStateFromError(error) {
@@ -17,6 +18,38 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     this.setState({ error, componentStack: info?.componentStack });
+  }
+
+  getErrorText() {
+    const { error, componentStack } = this.state;
+    let text = `${error.name}: ${error.message}\n\n${error.stack}`;
+    if (componentStack) text += `\n\nComponent stack:${componentStack}`;
+    return text;
+  }
+
+  async handleCopy() {
+    const text = this.getErrorText();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Clipboard API can be unavailable/blocked — fall back to the
+      // classic hidden-textarea + execCommand trick.
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        document.execCommand('copy');
+      } catch {
+        // give up silently — the text is still selectable/visible on screen
+      }
+      document.body.removeChild(textarea);
+    }
+    this.setState({ copied: true });
+    setTimeout(() => this.setState({ copied: false }), 2000);
   }
 
   render() {
@@ -29,12 +62,14 @@ export default class ErrorBoundary extends Component {
           {this.state.componentStack && (
             <p style={{ marginTop: 12, color: '#7f1d1d' }}>Component stack:{this.state.componentStack}</p>
           )}
-          <button
-            style={{ marginTop: 16, padding: '8px 14px', fontSize: 14 }}
-            onClick={() => window.location.reload()}
-          >
-            Reload
-          </button>
+          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+            <button style={{ padding: '8px 14px', fontSize: 14 }} onClick={this.handleCopy}>
+              {this.state.copied ? 'Copied!' : 'Copy error'}
+            </button>
+            <button style={{ padding: '8px 14px', fontSize: 14 }} onClick={() => window.location.reload()}>
+              Reload
+            </button>
+          </div>
         </div>
       );
     }
