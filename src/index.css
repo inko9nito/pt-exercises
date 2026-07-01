@@ -1219,6 +1219,35 @@ button {
 }
 
 /* ============================================================
+   Add exercise (log something not scheduled today)
+   ============================================================ */
+.add-exercise-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 28px;
+  padding: 14px var(--space-4);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: background .15s, border-color .15s;
+}
+
+.add-exercise-btn:active {
+  background: var(--bg);
+  border-color: var(--ink-3);
+}
+
+.add-exercise-body {
+  padding: var(--space-4);
+}
+
+/* ============================================================
    Progress View
    ============================================================ */
 .progress-view {

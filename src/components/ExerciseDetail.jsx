@@ -19,15 +19,18 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
   const isAsNeeded = exercise.freqType === FREQ.AS_NEEDED;
   const maxPerDay = exercise.maxPerDay || 99;
 
-  // Derived from the same isDueToday check that drives the Due Now / Not Due
-  // grouping, so the button state can never contradict which list the
-  // exercise is actually showing up in (this used to be its own ad hoc
-  // per-type guess, which let "as needed" show "Completed" while still
-  // being permanently due, and never let "every 1-2 hours" show
-  // "Completed" even during its real cooldown window).
+  // !isDueToday alone isn't enough here — an every-3-days exercise done
+  // yesterday is also "not due today", but it hasn't been done *today*, so
+  // treating it as completed would hide the Mark complete button entirely
+  // (exactly the case opened via "Log another exercise" for something not
+  // otherwise scheduled today). Requiring at least one completion today
+  // keeps the existing behavior for "as needed" (always due, so this is
+  // always false) and "every 1-2 hours" (cooldown only kicks in after a
+  // same-day session) while still letting an unscheduled exercise be
+  // logged instead of showing a false "Completed" state.
   const completedToday = isMultipleDaily
     ? todayCount >= maxPerDay
-    : !isDueToday(exercise, completions);
+    : todayCount > 0 && !isDueToday(exercise, completions);
 
   const nextExercise = exercises.find((e) => e.id === exercise.id + 1) || null;
   const showUpNext = completedToday && nextExercise;

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import ExerciseRow from './ExerciseRow.jsx';
 import WeekStrip from './WeekStrip.jsx';
-import { CheckIcon } from './Icons.jsx';
+import AddExerciseSheet from './AddExerciseSheet.jsx';
+import { CheckIcon, PlusIcon } from './Icons.jsx';
 import { exercises, FREQ } from '../data/exercises.js';
 import {
   isDueToday,
@@ -26,6 +27,7 @@ export default function DailyView({ completions, onOpenExercise }) {
   const todayKey = dateKey(today);
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [showAddSheet, setShowAddSheet] = useState(false);
   const isViewingToday = selectedDate === todayKey;
 
   const dateLabel = today.toLocaleDateString('en-US', {
@@ -34,7 +36,7 @@ export default function DailyView({ completions, onOpenExercise }) {
     day: 'numeric',
   });
 
-  const { due, optional, completedToday, relevantTodayCount } = useMemo(() => {
+  const { due, optional, completedToday, relevantIds } = useMemo(() => {
     const due = [];
     const optional = [];
     const completedToday = [];
@@ -80,13 +82,24 @@ export default function DailyView({ completions, onOpenExercise }) {
       // still visible any time in "All exercises".
     }
 
-    return { due, optional, completedToday, relevantTodayCount: relevantIds.size };
+    return { due, optional, completedToday, relevantIds };
   }, [completions]);
+
+  const relevantTodayCount = relevantIds.size;
 
   const doneCount = exercises.reduce((acc, ex) => {
     const hist = completions[String(ex.id)] || [];
     return acc + (hist.some(isToday) ? 1 : 0);
   }, 0);
+
+  // Exercises whose schedule doesn't put them on today's page at all (e.g.
+  // every-3-days ones not due yet) — surfaced via "Log another exercise" so
+  // an unscheduled session (vet visit, one-off extra rep) doesn't require
+  // digging through the All Exercises tab to find.
+  const notScheduledToday = useMemo(
+    () => exercises.filter((ex) => !relevantIds.has(ex.id)),
+    [relevantIds]
+  );
 
   // Due/optional/not-due status is only meaningful for today — a past or
   // future day in the week strip just shows what was actually logged then,
@@ -196,7 +209,24 @@ export default function DailyView({ completions, onOpenExercise }) {
               </div>
             </>
           )}
+
+          <button className="add-exercise-btn" onClick={() => setShowAddSheet(true)}>
+            <PlusIcon size={16} />
+            Log another exercise
+          </button>
         </>
+      )}
+
+      {showAddSheet && (
+        <AddExerciseSheet
+          exercises={notScheduledToday}
+          completions={completions}
+          onOpenExercise={(ex) => {
+            setShowAddSheet(false);
+            onOpenExercise(ex);
+          }}
+          onClose={() => setShowAddSheet(false)}
+        />
       )}
     </div>
   );
