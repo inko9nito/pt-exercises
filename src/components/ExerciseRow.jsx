@@ -34,6 +34,8 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
             <span className="optional-tag">
               Next due ~{nextDue.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
+          ) : exercise.dailyTarget && todayCount >= exercise.dailyTarget ? (
+            <span className="optional-tag">Done for today</span>
           ) : (
             exercise.freqLabel
           )}
@@ -46,7 +48,12 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
           {todayCount}/{maxPerDay}
         </span>
       )}
-      {isOpenEnded && todayCount > 0 && (
+      {isOpenEnded && todayCount > 0 && exercise.dailyTarget && (
+        <span className={`row-status-badge ${todayCount >= exercise.dailyTarget ? 'complete' : ''}`}>
+          {todayCount}/{exercise.dailyTarget}
+        </span>
+      )}
+      {isOpenEnded && todayCount > 0 && !exercise.dailyTarget && (
         <span className="row-status-complete">
           <CheckCircleIcon size={18} />
           <span className="row-status-count">{todayCount}×</span>

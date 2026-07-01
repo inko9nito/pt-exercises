@@ -268,6 +268,9 @@ export const exercises = [
     freqType: FREQ.HOURLY,
     freqLabel: 'Every 1–2 hours',
     freqMinutes: 90,
+    // 16 waking hours (24 minus ~8 hours of sleep) at up to one session
+    // every 2 hours works out to a daily cap of 8 sessions.
+    dailyTarget: 8,
     description:
       'Place the patient in a comfortable position lying on its side. Position yourself behind the back limbs. Place the upper hand on the lower portion of the thigh and the other hand on the lower limb, supporting all joints. Slowly and gently flex all of the joints, moving the entire limb through an exaggerated range of motion similar to pedaling a bicycle. Stop if the patient shows discomfort.',
     images: ['images/exercise_p10_img1.jpeg', 'images/exercise_p10_img2.jpeg'],

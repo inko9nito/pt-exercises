@@ -72,6 +72,10 @@ export function isDueToday(exercise, completions) {
     }
 
     case FREQ.HOURLY: {
+      if (exercise.dailyTarget) {
+        const todayCount = history.filter(isToday).length;
+        if (todayCount >= exercise.dailyTarget) return false;
+      }
       if (history.length === 0) return true;
       const last = new Date(history[history.length - 1]);
       const minutesSince = (today - last) / (1000 * 60);
@@ -104,6 +108,7 @@ export function getNextDueEstimate(exercise, completions) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   if (history.length === 0) return null;
+  if (exercise.dailyTarget && history.filter(isToday).length >= exercise.dailyTarget) return null;
   const last = new Date(history[history.length - 1]);
   const next = new Date(last.getTime() + (exercise.freqMinutes || 90) * 60000);
   if (next <= new Date()) return null;
