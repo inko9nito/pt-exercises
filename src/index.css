@@ -339,6 +339,12 @@ button {
   font-weight: 400;
 }
 
+.daily-count-bonus {
+  font-size: var(--text-sm);
+  font-weight: 800;
+  color: var(--success);
+}
+
 .section-label {
   font-size: var(--text-sm);
   font-weight: 700;
@@ -1242,6 +1248,19 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  transition: box-shadow 0.4s ease;
+}
+
+/* The flourish: a soft halo once the day's plan is fully done. Bonus work
+   isn't required for it — finishing the plan earns it — but a +N alongside
+   reads as the amplified version. */
+.progress-ring-wrap.is-complete {
+  box-shadow: 0 0 0 5px var(--success-soft);
+}
+
+.progress-ring-wrap.is-complete .progress-ring-count {
+  color: var(--success);
 }
 
 .progress-ring-track {
@@ -1276,6 +1295,13 @@ button {
   color: var(--ink-3);
   font-weight: 500;
   margin-top: 2px;
+}
+
+.progress-ring-bonus {
+  margin-top: 5px;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  color: var(--success);
 }
 
 .progress-stats {

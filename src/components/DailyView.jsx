@@ -10,6 +10,7 @@ import {
   isRelevantToday,
   isToday,
   getTodayCount,
+  getPlanProgress,
   dateKey,
   getCompletionDateMap,
 } from '../utils/tracker.js';
@@ -82,12 +83,12 @@ export default function DailyView({ completions, onOpenExercise }) {
     return { due, optional, completedToday, relevantIds };
   }, [completions]);
 
-  const relevantTodayCount = relevantIds.size;
-
-  const doneCount = exercises.reduce((acc, ex) => {
-    const hist = completions[String(ex.id)] || [];
-    return acc + (hist.some(isToday) ? 1 : 0);
-  }, 0);
+  // Same plan/bonus split the Progress ring uses, so the two never disagree
+  // about how much of today is "done".
+  const { planTotal, planDone, bonusDone } = useMemo(
+    () => getPlanProgress(exercises, completions),
+    [completions]
+  );
 
   // Exercises whose schedule doesn't put them on today's page at all (e.g.
   // every-3-days ones not due yet) — surfaced via "Log another exercise" so
@@ -135,10 +136,11 @@ export default function DailyView({ completions, onOpenExercise }) {
           <div className="daily-summary">
             <div className="daily-date">{dateLabel}</div>
             <div className="daily-count-row">
-              <span className="daily-count-done">{doneCount}</span>
+              <span className="daily-count-done">{planDone}</span>
               <span className="daily-count-sep">/</span>
-              <span className="daily-count-total">{relevantTodayCount}</span>
+              <span className="daily-count-total">{planTotal}</span>
               <span className="daily-count-label">exercises done today</span>
+              {bonusDone > 0 && <span className="daily-count-bonus">+{bonusDone} extra</span>}
             </div>
           </div>
 

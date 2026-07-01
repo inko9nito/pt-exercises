@@ -4,11 +4,10 @@ import MonthCalendar from './MonthCalendar.jsx';
 import { CheckCircleIcon, FlameIcon } from './Icons.jsx';
 import { exercises } from '../data/exercises.js';
 import {
-  isToday,
   getTotalSessions,
   getStreak,
   getCompletionDateMap,
-  getRelevantTodayCount,
+  getPlanProgress,
 } from '../utils/tracker.js';
 
 function formatDateLong(key) {
@@ -24,12 +23,10 @@ export default function ProgressView({ completions }) {
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const doneToday = useMemo(
-    () =>
-      exercises.filter((ex) => (completions[String(ex.id)] || []).some(isToday)).length,
+  const { planTotal, planDone, bonusDone } = useMemo(
+    () => getPlanProgress(exercises, completions),
     [completions]
   );
-  const relevantToday = useMemo(() => getRelevantTodayCount(exercises, completions), [completions]);
 
   const totalSessions = useMemo(() => getTotalSessions(completions), [completions]);
   const streak = useMemo(() => getStreak(completions), [completions]);
@@ -40,7 +37,7 @@ export default function ProgressView({ completions }) {
   return (
     <div className="progress-view">
       <div className="progress-hero">
-        <ProgressRing value={doneToday} max={relevantToday} />
+        <ProgressRing value={planDone} max={planTotal} bonus={bonusDone} />
         <div className="progress-stats">
           <div className="stat-card">
             <span className="stat-icon stat-icon-mint">
