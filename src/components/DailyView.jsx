@@ -83,7 +83,7 @@ export default function DailyView({ completions, onOpenExercise }) {
         <>
           <div className="section-label">
             To do
-            <span className="section-count">({due.length})</span>
+            <span className="section-count">{due.length}</span>
           </div>
           <div className="row-group">
             {due.map((ex) => (
@@ -102,7 +102,7 @@ export default function DailyView({ completions, onOpenExercise }) {
         <>
           <div className="section-label" style={{ marginTop: 28 }}>
             Optional
-            <span className="section-count">({optional.length})</span>
+            <span className="section-count">{optional.length}</span>
           </div>
           <div className="row-group">
             {optional.map((ex) => (
@@ -121,7 +121,7 @@ export default function DailyView({ completions, onOpenExercise }) {
         <>
           <div className="section-label" style={{ marginTop: 28 }}>
             Completed today
-            <span className="section-count">({completedToday.length})</span>
+            <span className="section-count">{completedToday.length}</span>
           </div>
           <div className="row-group">
             {completedToday.map((ex) => (
