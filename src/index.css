@@ -305,25 +305,8 @@ button {
 }
 
 .section-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 18px;
-  padding: 0 6px;
-  background: var(--accent);
-  color: var(--white);
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: var(--radius-pill);
-}
-
-.section-count.success {
-  background: var(--success);
-}
-
-.section-count.optional {
-  background: var(--info);
+  font-weight: 500;
+  color: var(--ink-3);
 }
 
 .all-done-state {
