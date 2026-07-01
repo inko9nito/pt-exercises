@@ -261,10 +261,6 @@ button {
   letter-spacing: 0.02em;
 }
 
-.week-day-label.is-today {
-  color: var(--accent);
-}
-
 .week-day-ring {
   width: 34px;
   height: 34px;
@@ -272,7 +268,11 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.week-day-ring.is-today {
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .week-day-ring.is-done {
