@@ -11,7 +11,17 @@ import { subscribeToCompletions, subscribeToConnectionStatus, pushCompletions } 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
 const TAB_PROGRESS = 'progress';
+const VALID_TABS = [TAB_TODAY, TAB_ALL, TAB_PROGRESS];
 const DETAIL_EXIT_MS = 300;
+
+// The active tab is mirrored into the URL's ?tab= param (via replaceState,
+// so it doesn't grow the history stack) purely so a hard reload — like the
+// one pull-to-refresh now triggers — lands back on the tab you were on
+// instead of always resetting to Today.
+function getInitialTab() {
+  const fromUrl = new URLSearchParams(window.location.search).get('tab');
+  return VALID_TABS.includes(fromUrl) ? fromUrl : TAB_TODAY;
+}
 
 // __BUILD_TIME__/__BUILD_COMMIT__ are injected at build time (see
 // vite.config.js) so it's obvious on-device whether a stale, cached bundle
@@ -31,7 +41,7 @@ function BuildInfo() {
 }
 
 export default function App() {
-  const [tab, setTab] = useState(TAB_TODAY);
+  const [tab, setTabState] = useState(getInitialTab);
   const [completions, setCompletions] = useState(() => loadCompletions());
   const [synced, setSynced] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
@@ -96,6 +106,13 @@ export default function App() {
 
   const closeExercise = useCallback(() => {
     window.history.back();
+  }, []);
+
+  const setTab = useCallback((next) => {
+    setTabState(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', next);
+    window.history.replaceState(window.history.state, '', url.toString());
   }, []);
 
   // Pull to refresh is meant as an escape hatch for "is this actually the
