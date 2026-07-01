@@ -1,5 +1,5 @@
 import { exercises } from '../data/exercises.js';
-import { dateKey } from '../utils/tracker.js';
+import { dateKey, getPlanProgressOn } from '../utils/tracker.js';
 import { useSwipe } from '../utils/useSwipe.js';
 import { CheckIcon } from './Icons.jsx';
 
@@ -18,13 +18,13 @@ function getWeekDates(weekOffset) {
   });
 }
 
+// Each day's ring fills against *that day's own plan* (reconstructed from
+// history), not the whole 20-exercise library — otherwise a fully-completed
+// day where only a handful were due reads as barely started.
 function dayDoneFraction(date, completions) {
-  const key = dateKey(date);
-  const doneCount = exercises.reduce((count, ex) => {
-    const hist = completions[String(ex.id)] || [];
-    return count + (hist.some((iso) => dateKey(new Date(iso)) === key) ? 1 : 0);
-  }, 0);
-  return doneCount / exercises.length;
+  const { planTotal, planDone } = getPlanProgressOn(exercises, completions, date);
+  if (planTotal === 0) return 0;
+  return planDone / planTotal;
 }
 
 export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions }) {

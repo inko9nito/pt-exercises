@@ -147,39 +147,49 @@ export function isRelevantToday(exercise, completions) {
 // the plan, and completing a scheduled one must never shrink it out of the
 // plan. The distinction plain isDueToday can't make is that a daily
 // exercise stops being "due" the moment it's done, yet it was still on
-// today's plan — so here we look only at sessions *before* today.
-export function isScheduledToday(exercise, completions) {
-  const id = String(exercise.id);
-  const history = completions[id] || [];
-  const today = new Date();
+// that day's plan — so scheduling is computed only from sessions on *other*
+// days, which also lets it be reconstructed for any past day (the week
+// strip's per-day rings) purely from history.
+function sessionsBefore(history, date) {
+  const key = dateKey(date);
+  return history.filter((iso) => dateKey(new Date(iso)) < key);
+}
+
+function doneOn(history, date) {
+  const key = dateKey(date);
+  return history.some((iso) => dateKey(new Date(iso)) === key);
+}
+
+export function isScheduledOn(exercise, completions, date) {
+  const history = completions[String(exercise.id)] || [];
 
   switch (exercise.freqType) {
     case FREQ.DAILY:
+    case FREQ.MULTIPLE_DAILY:
+    case FREQ.HOURLY:
+      // Part of every day's routine; counts as plan-done once it's had at
+      // least one session that day.
       return true;
 
-    case FREQ.DAILY_OR_EOD:
-      // Baseline is daily, but doing it yesterday already satisfies the
-      // every-other-day floor and makes today genuinely optional — not part
-      // of the plan. (isOptionalToday returns false once it's done today, so
-      // a completed one correctly stays in the plan as plan-done.)
-      return !isOptionalToday(exercise, completions);
+    case FREQ.DAILY_OR_EOD: {
+      // Baseline is daily, but doing it the day before already satisfies the
+      // every-other-day floor and makes this day genuinely optional — not
+      // part of the plan (doing it anyway is bonus).
+      const prev = new Date(date);
+      prev.setDate(prev.getDate() - 1);
+      return !doneOn(history, prev);
+    }
 
     case FREQ.EVERY_OTHER_DAY:
     case FREQ.EVERY_3_DAYS:
     case FREQ.TWICE_WEEKLY: {
-      // Same cadence check as isDueToday, but ignoring anything logged today
-      // so completing it doesn't drop it back out of the plan.
-      const prior = history.filter((iso) => !isToday(iso));
+      // Due on this day if the last session *before* it is at least the
+      // cadence gap back (or there was none yet).
+      const prior = sessionsBefore(history, date);
       if (prior.length === 0) return true;
       const last = prior[prior.length - 1];
-      return daysBetween(last, today) >= exercise.freqDays;
+      return daysBetween(last, date) >= exercise.freqDays;
     }
-
-    case FREQ.MULTIPLE_DAILY:
-    case FREQ.HOURLY:
-      // Part of the daily routine; counts as plan-done once it's had at
-      // least one session today.
-      return true;
 
     case FREQ.AS_NEEDED:
     default:
@@ -188,22 +198,26 @@ export function isScheduledToday(exercise, completions) {
   }
 }
 
-// Splits today's activity into two non-fungible currencies:
-//   planTotal  — exercises prescribed today (independent of completion)
-//   planDone   — how many of those are done (never exceeds planTotal, so the
+export function isScheduledToday(exercise, completions) {
+  return isScheduledOn(exercise, completions, new Date());
+}
+
+// Splits a given day's activity into two non-fungible currencies:
+//   planTotal  — exercises prescribed that day (independent of completion)
+//   planDone   — how many of those are done (never exceeds planTotal, so a
 //                ring can't overflow on scheduled work and the "flourish" is
 //                earned only by actually finishing the plan)
-//   bonusDone  — exercises done today that were NOT on the plan (optional or
-//                unscheduled/"logged another"), surfaced separately so extra
-//                work is visible without silently papering over a skipped
-//                scheduled exercise.
-export function getPlanProgress(exercises, completions) {
+//   bonusDone  — exercises done that day that were NOT on the plan (optional
+//                or unscheduled/"logged another"), surfaced separately so
+//                extra work is visible without silently papering over a
+//                skipped scheduled exercise.
+export function getPlanProgressOn(exercises, completions, date) {
   let planTotal = 0;
   let planDone = 0;
   let bonusDone = 0;
   for (const ex of exercises) {
-    const done = (completions[String(ex.id)] || []).some(isToday);
-    if (isScheduledToday(ex, completions)) {
+    const done = doneOn(completions[String(ex.id)] || [], date);
+    if (isScheduledOn(ex, completions, date)) {
       planTotal += 1;
       if (done) planDone += 1;
     } else if (done) {
@@ -211,6 +225,10 @@ export function getPlanProgress(exercises, completions) {
     }
   }
   return { planTotal, planDone, bonusDone };
+}
+
+export function getPlanProgress(exercises, completions) {
+  return getPlanProgressOn(exercises, completions, new Date());
 }
 
 export function getTodayCount(exercise, completions) {
