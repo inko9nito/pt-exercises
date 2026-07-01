@@ -303,6 +303,18 @@ button {
   color: var(--white);
 }
 
+.week-day-today-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-top: 2px;
+  background: transparent;
+}
+
+.week-day-today-dot.is-today {
+  background: var(--info);
+}
+
 .day-detail-view {
   padding-bottom: var(--space-4);
 }

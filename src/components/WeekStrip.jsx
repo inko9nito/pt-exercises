@@ -28,6 +28,7 @@ function dayDoneFraction(date, completions) {
 }
 
 export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions }) {
+  const todayKey = dateKey(new Date());
   const weekDates = getWeekDates(weekOffset);
 
   const swipeHandlers = useSwipe({
@@ -39,6 +40,7 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
     <div className="week-strip" {...swipeHandlers}>
       {weekDates.map((date, i) => {
         const key = dateKey(date);
+        const isToday = key === todayKey;
         const isSelected = key === selectedDate;
         const fraction = dayDoneFraction(date, completions);
         const isDone = fraction >= 1;
@@ -59,6 +61,7 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
                 {isDone ? <CheckIcon size={13} /> : date.getDate()}
               </span>
             </span>
+            <span className={`week-day-today-dot ${isToday ? 'is-today' : ''}`} />
           </button>
         );
       })}
