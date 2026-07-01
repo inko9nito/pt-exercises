@@ -181,7 +181,7 @@ button {
 .app-main {
   flex: 1;
   overflow-y: auto;
-  overscroll-behavior-y: none;
+  overscroll-behavior: contain;
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 12px);
 }
 
