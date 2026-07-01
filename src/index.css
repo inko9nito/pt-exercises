@@ -2,19 +2,21 @@
    Design Tokens
    ============================================================ */
 :root {
-  /* Colors */
+  /* Colors — sage green + warm cream, matched to the app icon. Red is
+     reserved for errors/alerts only and is never used as an accent. */
   --white:          #FFFFFF;
-  --bg:             #F4F4F5;
+  --bg:             #F6F4EE;
   --surface:        #FFFFFF;
   --surface-raised: #FAFAFA;
+  --cream:          #FBF4E5;
 
   --ink:            #09090B;
   --ink-2:          #52525B;
   --ink-3:          #A1A1AA;
 
-  --accent:         #DC2626;
-  --accent-hover:   #B91C1C;
-  --accent-soft:    #FEF2F2;
+  --accent:         #56705A;
+  --accent-hover:   #435A47;
+  --accent-soft:    #EBF0E9;
 
   --success:        #16A34A;
   --success-soft:   #F0FDF4;
@@ -22,8 +24,12 @@
   --info:           #2563EB;
   --info-soft:      #EFF6FF;
 
-  --border:         #E4E4E7;
-  --border-strong:  #D4D4D8;
+  --error:          #DC2626;
+  --error-hover:    #B91C1C;
+  --error-soft:     #FEF2F2;
+
+  --border:         #E5E1D6;
+  --border-strong:  #D3CEBE;
 
   /* Type scale */
   --text-xs:   11px;
@@ -42,10 +48,10 @@
   --space-5: 20px;
   --space-6: 24px;
 
-  /* Radii */
-  --radius-sm:  10px;
-  --radius:     16px;
-  --radius-lg:  20px;
+  /* Radii — a bit softer/rounder throughout for a friendlier feel */
+  --radius-sm:  14px;
+  --radius:     20px;
+  --radius-lg:  26px;
   --radius-pill: 999px;
 
   /* Elevation */
@@ -57,7 +63,7 @@
   --max-width:     640px;
 
   /* Font */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
