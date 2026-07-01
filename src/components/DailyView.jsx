@@ -7,6 +7,7 @@ import { exercises, FREQ } from '../data/exercises.js';
 import {
   isDueToday,
   isOptionalToday,
+  isRelevantToday,
   isToday,
   getTodayCount,
   dateKey,
@@ -40,14 +41,12 @@ export default function DailyView({ completions, onOpenExercise }) {
     const due = [];
     const optional = [];
     const completedToday = [];
-    // Most exercises aren't due every day (every-other-day, every-3-days,
-    // hourly cooldowns, etc.), so "done today" out of the entire 20-exercise
-    // library is a near-unreachable, misleading denominator — track just the
-    // ones actually shown somewhere on today's page instead. A Set (rather
-    // than summing the three arrays' lengths) avoids double-counting the one
-    // case where an exercise appears in both due and completedToday (an
-    // hourly exercise whose cooldown already elapsed again after an earlier
-    // session today).
+    // A Set (rather than summing the three arrays' lengths) avoids
+    // double-counting the one case where an exercise appears in both due
+    // and completedToday (an hourly exercise whose cooldown already
+    // elapsed again after an earlier session today). isRelevantToday is
+    // the shared definition of "shows up somewhere on today's page" also
+    // used by the Progress tab's ring, so the two never drift apart.
     const relevantIds = new Set();
 
     for (const ex of exercises) {
@@ -58,17 +57,14 @@ export default function DailyView({ completions, onOpenExercise }) {
       if (ex.freqType === FREQ.AS_NEEDED) {
         // Never a real obligation — always available, never required.
         optional.push(ex);
-        relevantIds.add(ex.id);
       } else if (ex.freqType === FREQ.MULTIPLE_DAILY) {
         const maxPerDay = ex.maxPerDay || 99;
         if (todayCount === 0) due.push(ex); // at least one session is the baseline
         else if (todayCount < maxPerDay) optional.push(ex); // extra reps are a bonus
         else completedToday.push(ex);
-        relevantIds.add(ex.id);
       } else if (dueToday) {
         if (isOptionalToday(ex, completions)) optional.push(ex);
         else due.push(ex);
-        relevantIds.add(ex.id);
         // An hourly exercise done earlier today can already be due again by
         // the time its cooldown elapses — keep it visible in "Completed
         // today" too instead of dropping it the moment it reappears in "to
@@ -76,10 +72,11 @@ export default function DailyView({ completions, onOpenExercise }) {
         if (hist.some(isToday)) completedToday.push(ex);
       } else if (hist.some(isToday)) {
         completedToday.push(ex);
-        relevantIds.add(ex.id);
       }
       // Otherwise it's simply not due today — nothing to show here; it's
       // still visible any time in "All exercises".
+
+      if (isRelevantToday(ex, completions)) relevantIds.add(ex.id);
     }
 
     return { due, optional, completedToday, relevantIds };

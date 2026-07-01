@@ -128,6 +128,23 @@ export function getNextDueEstimate(exercise, completions) {
   return next;
 }
 
+// Whether an exercise shows up anywhere on today's page at all — due,
+// optional, or already completed today. Most exercises aren't due every
+// day (every-other-day, every-3-days, hourly cooldowns, etc.), so "done
+// today" out of the entire exercise library is a near-unreachable,
+// misleading denominator; this is the actual number of exercises today's
+// progress can be measured against.
+export function isRelevantToday(exercise, completions) {
+  if (exercise.freqType === FREQ.AS_NEEDED || exercise.freqType === FREQ.MULTIPLE_DAILY) return true;
+  if (isDueToday(exercise, completions)) return true;
+  const hist = completions[String(exercise.id)] || [];
+  return hist.some(isToday);
+}
+
+export function getRelevantTodayCount(exercises, completions) {
+  return exercises.reduce((count, ex) => count + (isRelevantToday(ex, completions) ? 1 : 0), 0);
+}
+
 export function getTodayCount(exercise, completions) {
   const id = String(exercise.id);
   const history = completions[id] || [];

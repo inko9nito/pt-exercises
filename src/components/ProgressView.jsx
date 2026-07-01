@@ -8,6 +8,7 @@ import {
   getTotalSessions,
   getStreak,
   getCompletionDateMap,
+  getRelevantTodayCount,
 } from '../utils/tracker.js';
 
 function formatDateLong(key) {
@@ -28,6 +29,7 @@ export default function ProgressView({ completions }) {
       exercises.filter((ex) => (completions[String(ex.id)] || []).some(isToday)).length,
     [completions]
   );
+  const relevantToday = useMemo(() => getRelevantTodayCount(exercises, completions), [completions]);
 
   const totalSessions = useMemo(() => getTotalSessions(completions), [completions]);
   const streak = useMemo(() => getStreak(completions), [completions]);
@@ -38,7 +40,7 @@ export default function ProgressView({ completions }) {
   return (
     <div className="progress-view">
       <div className="progress-hero">
-        <ProgressRing value={doneToday} max={exercises.length} />
+        <ProgressRing value={doneToday} max={relevantToday} />
         <div className="progress-stats">
           <div className="stat-card">
             <span className="stat-icon stat-icon-mint">
