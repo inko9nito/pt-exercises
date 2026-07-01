@@ -132,27 +132,19 @@ export default function App() {
 
   // Pull to refresh is meant as an escape hatch for "is this actually the
   // latest build" — a plain data resync doesn't help if the stale part is
-  // the JS/CSS bundle itself (the known iOS home-screen web-clip caching
-  // problem). So instead of just re-fetching completions, force a real
-  // reload: drop any Cache Storage entries/service workers (in case one is
-  // ever added later) and navigate to a cache-busted URL so the browser
-  // can't serve a cached index.html or asset bundle.
+  // the JS/CSS bundle itself. Every build's JS/CSS gets a unique
+  // content-hash filename, so a stale disk cache can never serve old code
+  // under a new build's name — the only thing that can go stale is
+  // index.html itself, and a normal reload already re-fetches that. This
+  // used to also nuke Cache Storage/service workers and navigate to a
+  // manually cache-busted URL via location.replace(), but this app has
+  // never registered a service worker (that was defensive code for
+  // something that doesn't exist), and rewriting the URL that way left a
+  // stray "_r=..." param stuck in the address bar permanently and broke
+  // back navigation. A plain reload is simpler and doesn't have either
+  // problem.
   const handleRefresh = useCallback(async () => {
-    try {
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((key) => caches.delete(key)));
-      }
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((reg) => reg.unregister()));
-      }
-    } catch {
-      // best effort — reload regardless
-    }
-    const url = new URL(window.location.href);
-    url.searchParams.set('_r', Date.now().toString());
-    window.location.replace(url.toString());
+    window.location.reload();
   }, []);
 
   useEffect(() => {
