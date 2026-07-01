@@ -253,6 +253,7 @@ button {
 }
 
 .week-day-ring {
+  position: relative;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -260,6 +261,25 @@ button {
   align-items: center;
   justify-content: center;
   transition: background 0.3s ease;
+}
+
+/* Signals "extra/bonus work happened this day" at a glance. Bonus can't fill
+   the ring (it's a separate currency from the prescribed plan), so it rides
+   as a corner badge that reads whether the ring is empty, partial, or full.
+   The ring-colour border punches it out cleanly against a full green ring. */
+.week-day-bonus-dot {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--bg);
+}
+
+.week-day.is-selected .week-day-bonus-dot {
+  border-color: var(--white);
 }
 
 .week-day-ring.is-done {

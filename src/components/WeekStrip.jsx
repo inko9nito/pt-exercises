@@ -18,15 +18,6 @@ function getWeekDates(weekOffset) {
   });
 }
 
-// Each day's ring fills against *that day's own plan* (reconstructed from
-// history), not the whole 20-exercise library — otherwise a fully-completed
-// day where only a handful were due reads as barely started.
-function dayDoneFraction(date, completions) {
-  const { planTotal, planDone } = getPlanProgressOn(exercises, completions, date);
-  if (planTotal === 0) return 0;
-  return planDone / planTotal;
-}
-
 export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions }) {
   const todayKey = dateKey(new Date());
   const weekDates = getWeekDates(weekOffset);
@@ -42,8 +33,16 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
         const key = dateKey(date);
         const isToday = key === todayKey;
         const isSelected = key === selectedDate;
-        const fraction = dayDoneFraction(date, completions);
-        const isDone = fraction >= 1;
+        // Each day's ring fills against *that day's own plan* (reconstructed
+        // from history), not the whole 20-exercise library — otherwise a
+        // fully-completed day where only a handful were due reads as barely
+        // started. Bonus/extra work can't fill the ring (that's the
+        // non-fungible plan-vs-bonus rule), so it gets its own corner dot so
+        // a day with extra sessions doesn't look identical to an empty one.
+        const { planTotal, planDone, bonusDone } = getPlanProgressOn(exercises, completions, date);
+        const fraction = planTotal > 0 ? planDone / planTotal : 0;
+        const isDone = planTotal > 0 && planDone >= planTotal;
+        const hasBonus = bonusDone > 0;
         const angle = Math.min(fraction, 1) * 360;
 
         return (
@@ -64,6 +63,7 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
               <span className="week-day-ring-hole">
                 {isDone ? <CheckIcon size={13} /> : date.getDate()}
               </span>
+              {hasBonus && <span className="week-day-bonus-dot" aria-label="Extra exercise logged" />}
             </span>
           </button>
         );
