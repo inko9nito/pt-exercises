@@ -114,7 +114,13 @@ export default function App() {
     setSelectedExercise(exercise);
   }, []);
 
+  // Tracks whether we're the ones who called history.back() (via our own
+  // back button) versus popstate firing from something external, like
+  // iOS Safari's native edge-swipe-back gesture.
+  const intentionalBackRef = useRef(false);
+
   const closeExercise = useCallback(() => {
+    intentionalBackRef.current = true;
     window.history.back();
   }, []);
 
@@ -144,11 +150,27 @@ export default function App() {
 
   useEffect(() => {
     const onPopState = () => {
-      setDetailClosing(true);
-      closeTimerRef.current = setTimeout(() => {
+      if (intentionalBackRef.current) {
+        // We triggered this ourselves via the in-app back button — play
+        // our own exit animation.
+        intentionalBackRef.current = false;
+        setDetailClosing(true);
+        closeTimerRef.current = setTimeout(() => {
+          setSelectedExercise(null);
+          setDetailClosing(false);
+        }, DETAIL_EXIT_MS);
+      } else {
+        // Triggered externally — most commonly iOS Safari's native
+        // edge-swipe-back gesture, which already plays its own page
+        // transition as you drag. Layering our translateX(100%) exit
+        // animation on top double-animated it: our keyframe always
+        // starts from translateX(0) regardless of where the native
+        // gesture had already visually dragged the screen to, so it
+        // snapped back into view and re-slid out — the reported flash.
+        // Trust the native transition here and just unmount immediately.
         setSelectedExercise(null);
         setDetailClosing(false);
-      }, DETAIL_EXIT_MS);
+      }
     };
     window.addEventListener('popstate', onPopState);
     return () => {
