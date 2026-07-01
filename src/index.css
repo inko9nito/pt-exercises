@@ -315,12 +315,9 @@ button {
   padding-bottom: var(--space-4);
 }
 
-.daily-hero {
-  background: var(--white);
-  border-radius: var(--radius);
-  padding: var(--space-5);
+.daily-summary {
+  padding: 0 var(--space-1);
   margin-bottom: var(--space-5);
-  box-shadow: var(--shadow-card);
 }
 
 .daily-date {
@@ -334,7 +331,6 @@ button {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
 }
 
 .daily-count-done {
@@ -364,20 +360,6 @@ button {
   font-size: var(--text-sm);
   color: var(--ink-3);
   font-weight: 400;
-}
-
-.progress-track {
-  height: 5px;
-  background: var(--border);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: var(--radius-pill);
-  transition: width .5s cubic-bezier(.4,0,.2,1);
 }
 
 .section-label {

@@ -88,8 +88,6 @@ export default function DailyView({ completions, onOpenExercise }) {
     return acc + (hist.some(isToday) ? 1 : 0);
   }, 0);
 
-  const progressPct = relevantTodayCount > 0 ? Math.round((doneCount / relevantTodayCount) * 100) : 0;
-
   // Due/optional/not-due status is only meaningful for today — a past or
   // future day in the week strip just shows what was actually logged then,
   // the same read-only "day detail" pattern the Progress tab's calendar uses.
@@ -124,16 +122,13 @@ export default function DailyView({ completions, onOpenExercise }) {
         </div>
       ) : (
         <>
-          <div className="daily-hero">
+          <div className="daily-summary">
             <div className="daily-date">{dateLabel}</div>
             <div className="daily-count-row">
               <span className="daily-count-done">{doneCount}</span>
               <span className="daily-count-sep">/</span>
               <span className="daily-count-total">{relevantTodayCount}</span>
               <span className="daily-count-label">exercises done today</span>
-            </div>
-            <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${progressPct}%` }} />
             </div>
           </div>
 
