@@ -4,9 +4,9 @@ import AllExercises from './components/AllExercises.jsx';
 import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
 import PullToRefresh from './components/PullToRefresh.jsx';
-import { CalendarIcon, ListIcon, TrendingUpIcon, ActivityIcon } from './components/Icons.jsx';
+import { CalendarIcon, ListIcon, TrendingUpIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
-import { subscribeToCompletions, subscribeToConnectionStatus, pushCompletions } from './utils/sync.js';
+import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
@@ -43,7 +43,6 @@ function BuildInfo() {
 export default function App() {
   const [tab, setTabState] = useState(getInitialTab);
   const [completions, setCompletions] = useState(() => loadCompletions());
-  const [synced, setSynced] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [detailClosing, setDetailClosing] = useState(false);
   const closeTimerRef = useRef(null);
@@ -69,12 +68,8 @@ export default function App() {
       setCompletions(remote);
       saveCompletions(remote);
     });
-    const unsubConnection = subscribeToConnectionStatus((isConnected) => {
-      setSynced(isConnected);
-    });
     return () => {
       unsubData();
-      unsubConnection();
     };
   }, []);
 
@@ -164,23 +159,6 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <div className="header-inner">
-          <div className="header-wordmark">
-            <span className="header-name">Domino</span>
-            <span className="header-subtitle">
-              Physical therapy
-              <span className={`sync-status ${synced ? 'is-synced' : ''}`}>
-                {synced ? 'Synced' : 'Connecting…'}
-              </span>
-            </span>
-          </div>
-          <div className="header-logo">
-            <ActivityIcon size={22} />
-          </div>
-        </div>
-      </header>
-
       <PullToRefresh onRefresh={handleRefresh}>
         {tab === TAB_TODAY && (
           <DailyView completions={completions} onOpenExercise={openExercise} />
