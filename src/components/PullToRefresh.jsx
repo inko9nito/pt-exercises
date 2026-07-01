@@ -75,7 +75,11 @@ export default function PullToRefresh({ onRefresh, children }) {
         return;
       }
       e.preventDefault();
-      setPull(Math.min(delta * 0.45, MAX_PULL));
+      // Rubber-band: track the finger 1:1 up to the threshold (so the
+      // release point feels immediate/responsive), then damp sharply
+      // beyond it, rather than damping the whole drag uniformly.
+      const pull = delta < PULL_THRESHOLD ? delta : PULL_THRESHOLD + (delta - PULL_THRESHOLD) * 0.25;
+      setPull(Math.min(pull, MAX_PULL));
     }
 
     function onTouchEnd() {
