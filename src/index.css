@@ -202,6 +202,14 @@ button {
   z-index: 5;
 }
 
+.pull-refresh-content {
+  /* Without a compositing hint, WebKit can drop an SVG child (the progress
+     ring) for a frame while its transform-animated ancestor is dragged —
+     it briefly un-renders instead of just repainting. Promoting this
+     element to its own layer up front avoids that flicker. */
+  will-change: transform;
+}
+
 .pull-refresh-content.is-snapping {
   transition: transform .25s ease;
 }
