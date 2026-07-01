@@ -60,7 +60,7 @@ export const exercises = [
     freqDays: 2,
     description:
       'Lift both diagonal limbs of the dog to force them to stand on the remaining two legs. Make sure they do not fall over. Start with a few seconds and gradually increase the time in the exercise.',
-    images: ['images/exercise_p2_img1.jpeg', 'images/exercise_p2_img2.jpeg'],
+    images: ['images/exercise_p2_img1b.jpeg', 'images/exercise_p2_img2b.jpeg'],
     equipment: [],
     location: LOCATION.INDOOR,
   },
