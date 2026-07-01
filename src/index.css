@@ -785,20 +785,31 @@ button {
   align-items: center;
   justify-content: center;
   color: var(--ink-3);
-  transition: background .15s, border-color .15s, color .15s;
+  transition: background .15s, border-color .15s, color .15s, transform .1s;
 }
 
 .session-box.next {
-  background: var(--white);
-  border-color: var(--ink);
-  border-width: 2px;
-  color: var(--ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--white);
+}
+
+.session-box.next:active {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  transform: scale(0.97);
 }
 
 .session-box.done {
   background: var(--success);
   border-color: var(--success);
   color: var(--white);
+}
+
+.session-box.done:active {
+  background: #15803D;
+  border-color: #15803D;
+  transform: scale(0.97);
 }
 
 .session-box:disabled {
