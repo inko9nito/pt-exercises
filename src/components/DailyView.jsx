@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import ExerciseRow from './ExerciseRow.jsx';
 import { CheckIcon } from './Icons.jsx';
-import { exercises } from '../data/exercises.js';
-import { isDueToday, isToday } from '../utils/tracker.js';
+import { exercises, FREQ } from '../data/exercises.js';
+import { isDueToday, isOptionalToday, isToday, getTodayCount } from '../utils/tracker.js';
 
 export default function DailyView({ completions, onOpenExercise }) {
   const today = new Date();
@@ -13,20 +13,36 @@ export default function DailyView({ completions, onOpenExercise }) {
     day: 'numeric',
   });
 
-  const { due, completedToday, notDue } = useMemo(() => {
+  const { due, optional, completedToday, notDue } = useMemo(() => {
     const due = [];
+    const optional = [];
     const completedToday = [];
     const notDue = [];
+
     for (const ex of exercises) {
-      if (isDueToday(ex, completions)) {
-        due.push(ex);
+      const hist = completions[String(ex.id)] || [];
+      const todayCount = getTodayCount(ex, completions);
+      const dueToday = isDueToday(ex, completions);
+
+      if (ex.freqType === FREQ.AS_NEEDED) {
+        // Never a real obligation — always available, never required.
+        optional.push(ex);
+      } else if (ex.freqType === FREQ.MULTIPLE_DAILY) {
+        const maxPerDay = ex.maxPerDay || 99;
+        if (todayCount === 0) due.push(ex); // at least one session is the baseline
+        else if (todayCount < maxPerDay) optional.push(ex); // extra reps are a bonus
+        else completedToday.push(ex);
+      } else if (dueToday) {
+        if (isOptionalToday(ex, completions)) optional.push(ex);
+        else due.push(ex);
+      } else if (hist.some(isToday)) {
+        completedToday.push(ex);
       } else {
-        const hist = completions[String(ex.id)] || [];
-        if (hist.some(isToday)) completedToday.push(ex);
-        else notDue.push(ex);
+        notDue.push(ex);
       }
     }
-    return { due, completedToday, notDue };
+
+    return { due, optional, completedToday, notDue };
   }, [completions]);
 
   const doneCount = exercises.reduce((acc, ex) => {
@@ -67,6 +83,25 @@ export default function DailyView({ completions, onOpenExercise }) {
           </div>
           <div className="row-group">
             {due.map((ex) => (
+              <ExerciseRow
+                key={ex.id}
+                exercise={ex}
+                completions={completions}
+                onOpen={onOpenExercise}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {optional.length > 0 && (
+        <>
+          <div className="section-label" style={{ marginTop: 28 }}>
+            Optional
+            <span className="section-count optional">{optional.length}</span>
+          </div>
+          <div className="row-group">
+            {optional.map((ex) => (
               <ExerciseRow
                 key={ex.id}
                 exercise={ex}

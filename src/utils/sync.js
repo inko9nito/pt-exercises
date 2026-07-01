@@ -14,10 +14,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const completionsRef = ref(db, 'completions');
+const connectedRef = ref(db, '.info/connected');
 
 export function subscribeToCompletions(onChange) {
   return onValue(completionsRef, (snapshot) => {
     onChange(snapshot.val() || {});
+  });
+}
+
+// ".info/connected" is a special server-maintained path Firebase updates
+// itself — true only once the client has an actual live connection to the
+// server, unlike the completions listener above, which can fire from a
+// local/offline snapshot and doesn't by itself prove anything reached
+// the server.
+export function subscribeToConnectionStatus(onChange) {
+  return onValue(connectedRef, (snapshot) => {
+    onChange(snapshot.val() === true);
   });
 }
 

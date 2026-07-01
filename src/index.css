@@ -19,6 +19,9 @@
   --success:        #16A34A;
   --success-soft:   #F0FDF4;
 
+  --info:           #2563EB;
+  --info-soft:      #EFF6FF;
+
   --border:         #E4E4E7;
   --border-strong:  #D4D4D8;
 
@@ -331,6 +334,10 @@ button {
 
 .section-count.success {
   background: var(--success);
+}
+
+.section-count.optional {
+  background: var(--info);
 }
 
 .all-done-state {

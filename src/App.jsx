@@ -5,7 +5,7 @@ import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, ActivityIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
-import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
+import { subscribeToCompletions, subscribeToConnectionStatus, pushCompletions } from './utils/sync.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
@@ -24,12 +24,15 @@ export default function App() {
   // cache so the app shows last-known state instantly before the
   // subscription connects (and still works if briefly offline).
   useEffect(() => {
-    const unsubscribe = subscribeToCompletions((remote) => {
+    const unsubData = subscribeToCompletions((remote) => {
       setCompletions(remote);
       saveCompletions(remote);
-      setSynced(true);
     });
-    return () => unsubscribe();
+    const unsubConnection = subscribeToConnectionStatus(setSynced);
+    return () => {
+      unsubData();
+      unsubConnection();
+    };
   }, []);
 
   const handleMarkDone = useCallback((exerciseId) => {
