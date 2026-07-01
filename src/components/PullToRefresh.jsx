@@ -1,7 +1,10 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 
-const PULL_THRESHOLD = 64;
-const MAX_PULL = 96;
+// Matched against how far iOS Mail requires a pull before its spinner
+// fully forms and release actually triggers a refresh — our previous
+// 64px threshold was easy to hit with an ordinary scroll-up attempt.
+const PULL_THRESHOLD = 150;
+const MAX_PULL = 220;
 const MIN_SPINNER_MS = 500;
 
 function ActivitySpinner({ spinning }) {
