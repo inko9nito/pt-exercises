@@ -256,7 +256,12 @@ export const exercises = [
     freqDays: 1,
     description:
       'Using a treat or a favorite toy, have the dog follow the object, turning the head and neck to the side. Move the object/treat to the shoulders, front legs, hips and rear legs.',
-    images: ['images/exercise_p9_img1.jpeg', 'images/exercise_p9_img2.jpeg'],
+    images: [
+      'images/exercise_p9_seq1.jpeg',
+      'images/exercise_p9_seq2.jpeg',
+      'images/exercise_p9_seq3.jpeg',
+      'images/exercise_p9_seq4.jpeg',
+    ],
     equipment: ['Treat or toy'],
     location: LOCATION.INDOOR,
   },
