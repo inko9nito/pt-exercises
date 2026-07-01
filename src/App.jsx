@@ -5,6 +5,7 @@ import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, ActivityIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
+import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
@@ -14,14 +15,28 @@ const DETAIL_EXIT_MS = 300;
 export default function App() {
   const [tab, setTab] = useState(TAB_TODAY);
   const [completions, setCompletions] = useState(() => loadCompletions());
+  const [synced, setSynced] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [detailClosing, setDetailClosing] = useState(false);
   const closeTimerRef = useRef(null);
+
+  // Firebase is the source of truth; localStorage is just a fast local
+  // cache so the app shows last-known state instantly before the
+  // subscription connects (and still works if briefly offline).
+  useEffect(() => {
+    const unsubscribe = subscribeToCompletions((remote) => {
+      setCompletions(remote);
+      saveCompletions(remote);
+      setSynced(true);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleMarkDone = useCallback((exerciseId) => {
     setCompletions((prev) => {
       const next = markDone(prev, exerciseId);
       saveCompletions(next);
+      pushCompletions(next);
       return next;
     });
   }, []);
@@ -30,6 +45,7 @@ export default function App() {
     setCompletions((prev) => {
       const next = undoLast(prev, exerciseId);
       saveCompletions(next);
+      pushCompletions(next);
       return next;
     });
   }, []);
@@ -82,7 +98,12 @@ export default function App() {
         <div className="header-inner">
           <div className="header-wordmark">
             <span className="header-name">Domino</span>
-            <span className="header-subtitle">Physical therapy</span>
+            <span className="header-subtitle">
+              Physical therapy
+              <span className={`sync-status ${synced ? 'is-synced' : ''}`}>
+                {synced ? 'Synced' : 'Connecting…'}
+              </span>
+            </span>
           </div>
           <div className="header-logo">
             <ActivityIcon size={22} />
