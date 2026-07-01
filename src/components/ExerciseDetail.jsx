@@ -91,7 +91,6 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
           )}
 
           <div className="detail-section">
-            <p className="detail-section-label">How to</p>
             <p className="detail-description">{exercise.description}</p>
           </div>
 
@@ -106,26 +105,31 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
               <strong>{nextDue.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
             </p>
           )}
-
-          {showUpNext && (
-            <div className="up-next">
-              <p className="detail-section-label">Up next</p>
-              <button className="up-next-card" onClick={() => onNext(nextExercise)}>
-                <span className="up-next-thumb">
-                  <img src={assetUrl(nextExercise.images[0])} alt="" />
-                </span>
-                <span className="up-next-name">{nextExercise.name}</span>
-                <span className="row-chevron">
-                  <ChevronRightIcon size={18} />
-                </span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
       <div className="detail-action-bar">
-        {isMultipleDaily ? (
+        {showUpNext ? (
+          <>
+            <button className="up-next-card" onClick={() => onNext(nextExercise)}>
+              <span className="up-next-thumb">
+                <img src={assetUrl(nextExercise.images[0])} alt="" />
+              </span>
+              <span className="up-next-body">
+                <span className="up-next-label">Up next</span>
+                <span className="up-next-name">{nextExercise.name}</span>
+              </span>
+              <span className="row-chevron">
+                <ChevronRightIcon size={18} />
+              </span>
+            </button>
+            {history.length > 0 && (
+              <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
+                <UndoIcon size={18} />
+              </button>
+            )}
+          </>
+        ) : isMultipleDaily ? (
           <div className="session-boxes-wrap">
             <div className="session-boxes-header">
               <span className="session-boxes-label">Today's sessions</span>

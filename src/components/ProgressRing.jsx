@@ -21,7 +21,7 @@ export default function ProgressRing({ value, max, size = 148, strokeWidth = 12,
           cy={center}
           r={radius}
           fill="none"
-          style={{ stroke: 'var(--accent)', transition: 'stroke-dashoffset .5s ease' }}
+          style={{ stroke: 'var(--success)', transition: 'stroke-dashoffset .5s ease' }}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}

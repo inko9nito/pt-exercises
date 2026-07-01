@@ -78,7 +78,7 @@ export default function DailyView({ completions, onOpenExercise }) {
       ) : (
         <>
           <div className="section-label">
-            Due now
+            To do
             <span className="section-count">{due.length}</span>
           </div>
           <div className="row-group">

@@ -759,21 +759,17 @@ button {
 /* ============================================================
    Up next card
    ============================================================ */
-.up-next {
-  margin-top: calc(var(--space-5) * -1 + var(--space-3));
-  margin-bottom: var(--space-3);
-}
-
 .up-next-card {
-  width: 100%;
+  flex: 1;
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3);
+  padding: var(--space-2);
   background: var(--bg);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   text-align: left;
+  min-width: 0;
 }
 
 .up-next-card:active {
@@ -781,8 +777,8 @@ button {
 }
 
 .up-next-thumb {
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   border-radius: var(--radius-sm);
   overflow: hidden;
   flex-shrink: 0;
@@ -797,11 +793,27 @@ button {
   display: block;
 }
 
-.up-next-name {
+.up-next-body {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.up-next-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.up-next-name {
   font-size: var(--text-base);
   font-weight: 700;
   color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ============================================================
