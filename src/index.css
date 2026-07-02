@@ -848,6 +848,36 @@ button {
 }
 
 /* ============================================================
+   Log-entry mode (opened from the Progress calendar / a past day)
+   ============================================================ */
+.log-mode-wrap {
+  width: 100%;
+}
+
+.btn-remove {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px var(--space-4);
+  background: var(--white);
+  border: 2px solid var(--border-strong);
+  color: var(--ink-2);
+  font-size: var(--text-base);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  transition: background .15s, border-color .15s, color .15s, transform .1s;
+}
+
+.btn-remove:active {
+  background: var(--error-soft);
+  border-color: var(--error);
+  color: var(--error);
+  transform: scale(0.99);
+}
+
+/* ============================================================
    Up next card
    ============================================================ */
 .up-next-wrap {

@@ -104,7 +104,7 @@ export default function ProgressView({ completions, onOpenExercise }) {
                   <button
                     key={card.id}
                     className="exercise-row"
-                    onClick={() => onOpenExercise && onOpenExercise(ex)}
+                    onClick={() => onOpenExercise && onOpenExercise(ex, day.date)}
                   >
                     <span className="row-thumb">
                       <img src={assetUrl(ex.images[0])} alt="" loading="lazy" />

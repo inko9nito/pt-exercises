@@ -143,9 +143,10 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
                 // "Extra" = wasn't on that specific day's plan (optional or
                 // logged as an unscheduled add), same rule as today's
                 // Completed section but evaluated for the selected date.
-                const extra = !isScheduledOn(ex, completions, new Date(`${selectedDate}T12:00:00`));
+                const cardDate = new Date(`${selectedDate}T12:00:00`);
+                const extra = !isScheduledOn(ex, completions, cardDate);
                 return (
-                  <button key={card.id} className="exercise-row" onClick={() => onOpenExercise(ex)}>
+                  <button key={card.id} className="exercise-row" onClick={() => onOpenExercise(ex, cardDate)}>
                     <span className="row-thumb">
                       <img src={assetUrl(ex.images[0])} alt="" loading="lazy" />
                     </span>

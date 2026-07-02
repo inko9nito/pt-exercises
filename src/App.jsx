@@ -4,7 +4,7 @@ import AllExercises from './components/AllExercises.jsx';
 import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, RefreshIcon } from './components/Icons.jsx';
-import { loadCompletions, saveCompletions, markDone, markDoneOn, undoLast } from './utils/tracker.js';
+import { loadCompletions, saveCompletions, markDone, markDoneOn, undoLast, removeSessionOn } from './utils/tracker.js';
 import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
 
 const TAB_TODAY = 'today';
@@ -48,6 +48,11 @@ export default function App() {
   const [tab, setTabState] = useState(getInitialTab);
   const [completions, setCompletions] = useState(() => loadCompletions());
   const [selectedExercise, setSelectedExercise] = useState(null);
+  // When an exercise is opened from a day's *log* (a past day in the week
+  // strip, or the Progress calendar), this holds that date and the detail
+  // switches to a read-only log entry whose only action is removing that
+  // day's session — rather than the today-oriented "Mark complete" flow.
+  const [logDate, setLogDate] = useState(null);
   const [detailClosing, setDetailClosing] = useState(false);
   const closeTimerRef = useRef(null);
   // Firebase's onValue can fire with an empty placeholder snapshot before
@@ -105,13 +110,25 @@ export default function App() {
     });
   }, []);
 
-  const openExercise = useCallback((exercise) => {
+  const handleRemoveFromLog = useCallback((exerciseId, date) => {
+    setCompletions((prev) => {
+      const next = removeSessionOn(prev, exerciseId, date);
+      saveCompletions(next);
+      pushCompletions(next);
+      return next;
+    });
+  }, []);
+
+  // `date` (optional) opens the exercise as a log entry for that day; omitted
+  // for the normal today/library flow.
+  const openExercise = useCallback((exercise, date = null) => {
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
     window.history.pushState({ exerciseId: exercise.id }, '');
     setDetailClosing(false);
+    setLogDate(date);
     setSelectedExercise(exercise);
   }, []);
 
@@ -238,8 +255,10 @@ export default function App() {
           completions={completions}
           onMarkDone={handleMarkDone}
           onUndo={handleUndo}
+          onRemoveFromLog={handleRemoveFromLog}
           onClose={closeExercise}
           onNext={goToNextExercise}
+          logDate={logDate}
           closing={detailClosing}
         />
       )}

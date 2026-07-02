@@ -1,18 +1,30 @@
+import { useEffect } from 'react';
 import ImageCarousel from './ImageCarousel.jsx';
-import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon, CheckCircleIcon } from './Icons.jsx';
+import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon, CheckCircleIcon, TrashIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ, exercises } from '../data/exercises.js';
-import { isToday, isOptionalToday, isDueToday, getNextDueEstimate, formatLastDone } from '../utils/tracker.js';
+import { isToday, isOptionalToday, isDueToday, getNextDueEstimate, formatLastDone, countSessionsOn } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
 
 function pluralize(value, singular, plural) {
   return value === '1' ? singular : plural;
 }
 
-export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onClose, onNext, closing }) {
+export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onRemoveFromLog, onClose, onNext, logDate, closing }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   const todayCount = history.filter(isToday).length;
   const lastDoneDate = history.length > 0 ? new Date(history[history.length - 1]) : null;
+
+  // Opened from a day's log (Progress calendar or a past day): the only
+  // action is removing that day's session, not the today-oriented mark/undo.
+  const isLogMode = !!logDate;
+  const logDayCount = isLogMode ? countSessionsOn(completions, exercise.id, logDate) : 0;
+
+  // Once the last session for this exercise on that day is removed there's
+  // nothing left to show in the log, so close back to it.
+  useEffect(() => {
+    if (isLogMode && logDayCount === 0) onClose();
+  }, [isLogMode, logDayCount, onClose]);
 
   const isMultipleDaily = exercise.freqType === FREQ.MULTIPLE_DAILY;
   const isHourly = exercise.freqType === FREQ.HOURLY;
@@ -120,7 +132,19 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
       </div>
 
       <div className="detail-action-bar">
-        {showUpNext ? (
+        {isLogMode ? (
+          <div className="log-mode-wrap">
+            <div className="completed-status">
+              <CheckCircleIcon size={16} />
+              {logDayCount > 1 ? `Done ${logDayCount}× on` : 'Done'}{' '}
+              {logDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </div>
+            <button className="btn-remove" onClick={() => onRemoveFromLog(exercise.id, logDate)}>
+              <TrashIcon size={17} />
+              {logDayCount > 1 ? 'Remove a session' : 'Remove from log'}
+            </button>
+          </div>
+        ) : showUpNext ? (
           <div className="up-next-wrap">
             <div className="completed-status">
               <CheckCircleIcon size={16} />

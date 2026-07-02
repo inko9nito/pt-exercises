@@ -54,6 +54,29 @@ export function undoLast(completions, exerciseId) {
   return { ...completions, [id]: prev.slice(0, -1) };
 }
 
+// Remove a single logged session on a specific day (the most recent one that
+// day) — used when reviewing a past day's log and pulling out an entry,
+// rather than undoLast which always drops the globally-latest session.
+export function removeSessionOn(completions, exerciseId, date) {
+  const id = String(exerciseId);
+  const history = completions[id] || [];
+  const key = dateKey(date);
+  let idx = -1;
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (dateKey(new Date(history[i])) === key) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx === -1) return completions;
+  return { ...completions, [id]: [...history.slice(0, idx), ...history.slice(idx + 1)] };
+}
+
+export function countSessionsOn(completions, exerciseId, date) {
+  const key = dateKey(date);
+  return (completions[String(exerciseId)] || []).filter((iso) => dateKey(new Date(iso)) === key).length;
+}
+
 export function daysBetween(date1, date2) {
   const d1 = new Date(date1);
   const d2 = new Date(date2);
