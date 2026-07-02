@@ -126,7 +126,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
               <p className="detail-section-label">
                 Today's sessions
                 <span className="session-log-count">
-                  {exercise.dailyTarget ? `${todaySessions.length} of ${exercise.dailyTarget}` : todaySessions.length}
+                  {exercise.dailyTarget ? `${todaySessions.length}/${exercise.dailyTarget}` : todaySessions.length}
                 </span>
               </p>
               <div className="session-log">
@@ -230,8 +230,10 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
           <div className="complete-wrap">
             {!completedToday && todayCount > 0 && (
               <div className="log-status">
-                <CheckBadgeIcon size={16} />
-                {todayCount} logged today{exercise.dailyTarget ? ` · ${todayCount} of ${exercise.dailyTarget}` : ''}
+                <span className={`row-status-badge ${exercise.dailyTarget && todayCount >= exercise.dailyTarget ? 'complete' : ''}`}>
+                  {exercise.dailyTarget ? `${todayCount}/${exercise.dailyTarget}` : `${todayCount}×`}
+                </span>
+                <span className="log-status-label">logged today</span>
               </div>
             )}
             <div className="complete-row">
