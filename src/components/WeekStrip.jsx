@@ -60,7 +60,7 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
               className={`week-day-ring ${isDone ? 'is-done' : ''}`}
               style={!isDone ? { background: `conic-gradient(var(--success) ${angle}deg, var(--border) 0deg)` } : undefined}
             >
-              <span className="week-day-ring-hole">
+              <span className={`week-day-ring-hole ${isToday ? 'is-today' : ''}`}>
                 {isDone ? <CheckIcon size={13} /> : date.getDate()}
               </span>
               {hasBonus && (

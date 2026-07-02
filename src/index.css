@@ -248,8 +248,7 @@ button {
 
 .week-day-label.is-today {
   font-weight: 800;
-  color: var(--white);
-  background: var(--info);
+  color: var(--ink);
 }
 
 .week-day-ring {
@@ -304,6 +303,11 @@ button {
 
 .week-day.is-selected .week-day-ring-hole {
   background: var(--white);
+}
+
+.week-day-ring-hole.is-today {
+  font-weight: 800;
+  color: var(--ink);
 }
 
 .week-day-ring.is-done .week-day-ring-hole {
