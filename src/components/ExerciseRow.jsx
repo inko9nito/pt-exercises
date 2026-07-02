@@ -56,12 +56,12 @@ export default function ExerciseRow({ exercise, completions, onOpen, extra = fal
         </span>
       )}
       {isMultipleDaily && (
-        <span className={`row-status-badge ${todayCount >= maxPerDay ? 'complete' : ''}`}>
+        <span className={`row-status-badge ${todayCount > 0 ? 'complete' : ''}`}>
           {todayCount}/{maxPerDay}
         </span>
       )}
       {isOpenEnded && todayCount > 0 && exercise.dailyTarget && (
-        <span className={`row-status-badge ${todayCount >= exercise.dailyTarget ? 'complete' : ''}`}>
+        <span className="row-status-badge complete">
           {todayCount}/{exercise.dailyTarget}
         </span>
       )}

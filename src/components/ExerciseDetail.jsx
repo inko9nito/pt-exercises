@@ -230,7 +230,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
           <div className="complete-wrap">
             {!completedToday && todayCount > 0 && (
               <div className="log-status">
-                <span className={`row-status-badge ${exercise.dailyTarget && todayCount >= exercise.dailyTarget ? 'complete' : ''}`}>
+                <span className="row-status-badge complete">
                   {exercise.dailyTarget ? `${todayCount}/${exercise.dailyTarget}` : `${todayCount}×`}
                 </span>
                 <span className="log-status-label">logged today</span>
