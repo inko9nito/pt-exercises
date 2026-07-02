@@ -18,8 +18,12 @@
   --accent-hover:   #435A47;
   --accent-soft:    #EBF0E9;
 
-  --success:        #16A34A;
-  --success-soft:   #F0FDF4;
+  /* One green across the whole app: the app icon's sage (--accent). The
+     "success" tokens alias it so every green surface — completion rings,
+     checks, completed labels, bonus text — matches, instead of a second
+     brighter green. */
+  --success:        var(--accent);
+  --success-soft:   var(--accent-soft);
 
   --info:           #2563EB;
   --info-soft:      #EFF6FF;
