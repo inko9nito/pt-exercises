@@ -201,7 +201,9 @@ export default function App() {
         {tab === TAB_ALL && (
           <AllExercises completions={completions} onOpenExercise={openExercise} />
         )}
-        {tab === TAB_PROGRESS && <ProgressView completions={completions} />}
+        {tab === TAB_PROGRESS && (
+          <ProgressView completions={completions} onOpenExercise={openExercise} />
+        )}
         <BuildInfo onRefresh={handleRefresh} />
       </main>
 

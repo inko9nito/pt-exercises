@@ -1522,10 +1522,7 @@ button {
    Day detail (selected calendar day log)
    ============================================================ */
 .day-detail {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--space-4);
+  margin-top: var(--space-4);
 }
 
 .day-detail-title {
@@ -1535,33 +1532,29 @@ button {
   margin-bottom: var(--space-3);
 }
 
-.day-detail-list {
+/* Progress-tab day log: date on the left, that day's completion stat on the
+   right. */
+.day-log-header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.day-detail-item {
-  display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.day-log-header .day-detail-title {
+  margin-bottom: 0;
+}
+
+.day-log-stat {
+  flex-shrink: 0;
   font-size: var(--text-sm);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--border);
-}
-
-.day-detail-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.day-detail-name {
-  color: var(--ink-2);
-}
-
-.day-detail-time {
+  font-weight: 700;
   color: var(--ink-3);
-  font-size: var(--text-xs);
+}
+
+.day-log-stat-extra {
+  color: var(--success);
 }
 
 .day-detail-empty {
