@@ -37,12 +37,15 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
   // (exactly the case opened via "Log another exercise" for something not
   // otherwise scheduled today). Requiring at least one completion today
   // keeps the existing behavior for "as needed" (always due, so this is
-  // always false) and "every 1-2 hours" (cooldown only kicks in after a
-  // same-day session) while still letting an unscheduled exercise be
-  // logged instead of showing a false "Completed" state.
+  // always false) while still letting an unscheduled exercise be logged
+  // instead of showing a false "Completed" state. An hourly exercise with a
+  // daily target isn't "done" mid-cooldown either — it's only complete once
+  // the target is met, so it can keep logging the next session early.
   const completedToday = isMultipleDaily
     ? todayCount >= maxPerDay
-    : todayCount > 0 && !isDueToday(exercise, completions);
+    : isHourly && exercise.dailyTarget
+      ? todayCount >= exercise.dailyTarget
+      : todayCount > 0 && !isDueToday(exercise, completions);
 
   const nextExercise = exercises.find((e) => e.id === exercise.id + 1) || null;
   const showUpNext = completedToday && nextExercise;

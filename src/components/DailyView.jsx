@@ -7,6 +7,7 @@ import { exercises, FREQ } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
 import {
   getDaysOverdue,
+  getNextDueEstimate,
   isScheduledOn,
   isDueToday,
   isOptionalToday,
@@ -44,22 +45,20 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
     day: 'numeric',
   });
 
-  const { due, optional, completedToday, relevantIds } = useMemo(() => {
+  const { due, laterToday, optional, completedToday, relevantIds } = useMemo(() => {
     const due = [];
+    const laterToday = [];
     const optional = [];
     const completedToday = [];
-    // A Set (rather than summing the three arrays' lengths) avoids
-    // double-counting the one case where an exercise appears in both due
-    // and completedToday (an hourly exercise whose cooldown already
-    // elapsed again after an earlier session today). isRelevantToday is
-    // the shared definition of "shows up somewhere on today's page" also
-    // used by the Progress tab's ring, so the two never drift apart.
+    // isRelevantToday is the shared definition of "shows up somewhere on
+    // today's page", also used by the Progress ring, so the two never drift.
     const relevantIds = new Set();
 
     for (const ex of exercises) {
       const hist = completions[String(ex.id)] || [];
       const todayCount = getTodayCount(ex, completions);
       const dueToday = isDueToday(ex, completions);
+      const doneToday = hist.some(isToday);
 
       if (ex.freqType === FREQ.AS_NEEDED) {
         // Never a real obligation — always available, never required.
@@ -69,15 +68,18 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
         if (todayCount === 0) due.push(ex); // at least one session is the baseline
         else if (todayCount < maxPerDay) optional.push(ex); // extra reps are a bonus
         else completedToday.push(ex);
+      } else if (ex.freqType === FREQ.HOURLY) {
+        // Recurs through the day. Surface it where the user actually looks:
+        // "To do" when it's time again, "Later today" while cooling down
+        // between sessions (so a pending session isn't buried in Completed),
+        // and "Completed" only once the daily target is reached.
+        if (dueToday) due.push(ex);
+        else if (doneToday && getNextDueEstimate(ex, completions)) laterToday.push(ex);
+        else if (doneToday) completedToday.push(ex);
       } else if (dueToday) {
         if (isOptionalToday(ex, completions)) optional.push(ex);
         else due.push(ex);
-        // An hourly exercise done earlier today can already be due again by
-        // the time its cooldown elapses — keep it visible in "Completed
-        // today" too instead of dropping it the moment it reappears in "to
-        // do", otherwise the earlier session disappears without a trace.
-        if (hist.some(isToday)) completedToday.push(ex);
-      } else if (hist.some(isToday)) {
+      } else if (doneToday) {
         completedToday.push(ex);
       }
       // Otherwise it's simply not due today — nothing to show here; it's
@@ -86,7 +88,7 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
       if (isRelevantToday(ex, completions)) relevantIds.add(ex.id);
     }
 
-    return { due, optional, completedToday, relevantIds };
+    return { due, laterToday, optional, completedToday, relevantIds };
   }, [completions]);
 
   // Same plan/bonus split the Progress ring uses, so the two never disagree
@@ -196,15 +198,7 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
             </div>
           </div>
 
-          {due.length === 0 ? (
-            <div className="all-done-state">
-              <div className="all-done-icon">
-                <CheckIcon size={26} />
-              </div>
-              <p className="all-done-title">All caught up</p>
-              <p className="all-done-sub">Check back later for Domino's next session.</p>
-            </div>
-          ) : (
+          {due.length > 0 && (
             <>
               <div className="section-label">
                 To do
@@ -218,6 +212,35 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
                     completions={completions}
                     onOpen={onOpenExercise}
                     overdueDays={getDaysOverdue(ex, completions)}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {due.length === 0 && laterToday.length === 0 && (
+            <div className="all-done-state">
+              <div className="all-done-icon">
+                <CheckIcon size={26} />
+              </div>
+              <p className="all-done-title">All caught up</p>
+              <p className="all-done-sub">Check back later for Domino's next session.</p>
+            </div>
+          )}
+
+          {laterToday.length > 0 && (
+            <>
+              <div className="section-label" style={{ marginTop: 28 }}>
+                Later today
+                <span className="section-count">{laterToday.length}</span>
+              </div>
+              <div className="row-group">
+                {laterToday.map((ex) => (
+                  <ExerciseRow
+                    key={ex.id}
+                    exercise={ex}
+                    completions={completions}
+                    onOpen={onOpenExercise}
                   />
                 ))}
               </div>
