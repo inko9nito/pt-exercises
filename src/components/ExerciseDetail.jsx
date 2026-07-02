@@ -31,6 +31,10 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
   const isHourly = exercise.freqType === FREQ.HOURLY;
   const isAsNeeded = exercise.freqType === FREQ.AS_NEEDED;
   const maxPerDay = exercise.maxPerDay || 99;
+  // Both belly-lift-style (maxPerDay) and hourly (dailyTarget) exercises are
+  // "log N sessions today" — treat them the same so the counter, the today's
+  // sessions list, and the Log session button read identically for both.
+  const dailyGoal = exercise.dailyTarget || (isMultipleDaily ? maxPerDay : null);
 
   // !isDueToday alone isn't enough here — an every-3-days exercise done
   // yesterday is also "not due today", but it hasn't been done *today*, so
@@ -121,12 +125,12 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
             <p className="detail-description">{exercise.description}</p>
           </div>
 
-          {!isMultipleDaily && todaySessions.length > 0 && (
+          {todaySessions.length > 0 && (
             <div className="detail-section">
               <p className="detail-section-label">
                 Today's sessions
                 <span className="session-log-count">
-                  {exercise.dailyTarget ? `${todaySessions.length}/${exercise.dailyTarget}` : todaySessions.length}
+                  {dailyGoal ? `${todaySessions.length}/${dailyGoal}` : todaySessions.length}
                 </span>
               </p>
               <div className="session-log">
@@ -144,7 +148,6 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
 
           <p className="detail-last-done">
             Last done <strong>{formatLastDone(lastDoneDate)}</strong>
-            {isMultipleDaily && todayCount > 0 && ` · ${todayCount}× today`}
           </p>
 
           {nextDue && (
@@ -195,43 +198,12 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
               )}
             </div>
           </div>
-        ) : isMultipleDaily ? (
-          <div className="session-boxes-wrap">
-            <div className="session-boxes-header">
-              <span className="session-boxes-label">Today's sessions</span>
-              <span className="session-boxes-count">{todayCount} of {maxPerDay} done</span>
-            </div>
-            <div className="session-boxes">
-              {Array.from({ length: maxPerDay }).map((_, i) => {
-                const done = i < todayCount;
-                const isNext = i === todayCount;
-                const isLastDone = i === todayCount - 1;
-                const tappable = isNext || isLastDone;
-                return (
-                  <div className="session-item" key={i}>
-                    <button
-                      className={`session-box ${done ? 'done' : ''} ${isNext ? 'next' : ''}`}
-                      disabled={!tappable}
-                      aria-label={done ? `Session ${i + 1} done, tap to undo` : `Mark session ${i + 1} complete`}
-                      onClick={() => {
-                        if (isNext) onMarkDone(exercise.id);
-                        else if (isLastDone) onUndo(exercise.id);
-                      }}
-                    >
-                      {(done || isNext) && <CheckIcon size={18} />}
-                    </button>
-                    <span className="session-item-label">Session {i + 1}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         ) : (
           <div className="complete-wrap">
             {!completedToday && todayCount > 0 && (
               <div className="log-status">
                 <span className="row-status-badge complete">
-                  {exercise.dailyTarget ? `${todayCount}/${exercise.dailyTarget}` : `${todayCount}×`}
+                  {dailyGoal ? `${todayCount}/${dailyGoal}` : `${todayCount}×`}
                 </span>
                 <span className="log-status-label">logged today</span>
               </div>

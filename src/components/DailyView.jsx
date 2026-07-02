@@ -65,8 +65,13 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
         optional.push(ex);
       } else if (ex.freqType === FREQ.MULTIPLE_DAILY) {
         const maxPerDay = ex.maxPerDay || 99;
-        if (todayCount === 0) due.push(ex); // at least one session is the baseline
-        else if (todayCount < maxPerDay) optional.push(ex); // extra reps are a bonus
+        // Same flow as an hourly exercise: the first session is "To do",
+        // remaining sessions of the day live in "Later today" (spread the
+        // reps out, don't do them all at once), and it's "Completed" only
+        // once the daily count is met — the sessions are the plan, not a
+        // bonus, so it never lands in Optional.
+        if (todayCount === 0) due.push(ex);
+        else if (todayCount < maxPerDay) laterToday.push(ex);
         else completedToday.push(ex);
       } else if (ex.freqType === FREQ.HOURLY) {
         // Recurs through the day. Surface it where the user actually looks:
