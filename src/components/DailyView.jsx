@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import ExerciseRow from './ExerciseRow.jsx';
 import WeekStrip from './WeekStrip.jsx';
 import AddExerciseSheet from './AddExerciseSheet.jsx';
-import { CheckCircleIcon, CheckIcon, ChevronRightIcon, PlusIcon, StarIcon } from './Icons.jsx';
+import { CheckBadgeIcon, CheckIcon, ChevronRightIcon, PlusIcon, StarIcon } from './Icons.jsx';
 import { exercises, FREQ } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
 import {
@@ -165,7 +165,7 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
                       </span>
                     )}
                     <span className="row-status-check">
-                      <CheckCircleIcon size={20} />
+                      <CheckBadgeIcon size={21} />
                     </span>
                     <span className="row-chevron">
                       <ChevronRightIcon size={18} />

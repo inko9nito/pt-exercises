@@ -98,6 +98,15 @@ export const CheckCircleIcon = ({ size = 16 }) => (
   </svg>
 );
 
+// Completion check: a solid filled circle (currentColor) with a white check,
+// for strong contrast on the sage green.
+export const CheckBadgeIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="11" fill="currentColor" />
+    <path d="M7.5 12.4l3 3 6-6.6" fill="none" stroke="#FFFFFF" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const TrendingUpIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>

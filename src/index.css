@@ -14,11 +14,12 @@
   --ink-2:          #52525B;
   --ink-3:          #A1A1AA;
 
-  /* Sampled directly from the app icon's background (#739578). Hover is a
-     darker sage for pressed states; soft is a pale tint for fills/glows. */
-  --accent:         #739578;
-  --accent-hover:   #5E7A62;
-  --accent-soft:    #E9EFEA;
+  /* The app icon's sage (#739578), nudged a touch brighter/greener so it
+     reads fresher on screen. Hover is a darker sage for pressed states; soft
+     is a pale tint used for fills, glows and the selected-tab box. */
+  --accent:         #6AA37A;
+  --accent-hover:   #57896A;
+  --accent-soft:    #E7F0EA;
 
   /* One green across the whole app: the app icon's sage (--accent). The
      "success" tokens alias it so every green surface — completion rings,
@@ -196,13 +197,25 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  height: 30px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  transition: background .15s;
+}
+
+/* Selected tab: a green-tinted rounded box behind the icon (like the
+   Search tab in Headspace), with the icon and label in the app-icon green. */
+.nav-tab.active .nav-icon {
+  background: var(--accent-soft);
 }
 
 .nav-label {
   font-size: var(--text-xs);
   font-weight: 600;
+}
+
+.nav-tab.active .nav-label {
+  font-weight: 700;
 }
 
 /* ============================================================

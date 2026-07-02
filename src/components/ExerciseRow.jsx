@@ -1,4 +1,4 @@
-import { ChevronRightIcon, CheckCircleIcon, StarIcon, ClockIcon } from './Icons.jsx';
+import { ChevronRightIcon, CheckBadgeIcon, StarIcon, ClockIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ } from '../data/exercises.js';
 import { isToday, isOptionalToday, isDueToday, getNextDueEstimate } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
@@ -67,13 +67,13 @@ export default function ExerciseRow({ exercise, completions, onOpen, extra = fal
       )}
       {isOpenEnded && todayCount > 0 && !exercise.dailyTarget && (
         <span className="row-status-complete">
-          <CheckCircleIcon size={18} />
+          <CheckBadgeIcon size={19} />
           <span className="row-status-count">{todayCount}×</span>
         </span>
       )}
       {!isMultipleDaily && !isOpenEnded && !due && todayCount > 0 && (
         <span className="row-status-check">
-          <CheckCircleIcon size={20} />
+          <CheckBadgeIcon size={21} />
         </span>
       )}
       <span className="row-chevron">

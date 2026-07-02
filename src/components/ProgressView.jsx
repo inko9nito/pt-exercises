@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import ProgressRing from './ProgressRing.jsx';
 import MonthCalendar from './MonthCalendar.jsx';
-import { CheckCircleIcon, ChevronRightIcon, FlameIcon, StarIcon } from './Icons.jsx';
+import { CheckCircleIcon, CheckBadgeIcon, ChevronRightIcon, FlameIcon, StarIcon } from './Icons.jsx';
 import { exercises } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
 import {
@@ -124,7 +124,7 @@ export default function ProgressView({ completions, onOpenExercise }) {
                       </span>
                     )}
                     <span className="row-status-check">
-                      <CheckCircleIcon size={20} />
+                      <CheckBadgeIcon size={21} />
                     </span>
                     <span className="row-chevron">
                       <ChevronRightIcon size={18} />

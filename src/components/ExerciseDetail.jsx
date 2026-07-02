@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import ImageCarousel from './ImageCarousel.jsx';
-import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon, CheckCircleIcon, TrashIcon } from './Icons.jsx';
+import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon, CheckBadgeIcon, TrashIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ, exercises } from '../data/exercises.js';
 import { isToday, isOptionalToday, isDueToday, getNextDueEstimate, formatLastDone, countSessionsOn } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
@@ -135,7 +135,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
         {isLogMode ? (
           <div className="log-mode-wrap">
             <div className="completed-status">
-              <CheckCircleIcon size={16} />
+              <CheckBadgeIcon size={17} />
               {logDayCount > 1 ? `Done ${logDayCount}× on` : 'Done'}{' '}
               {logDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </div>
@@ -147,7 +147,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
         ) : showUpNext ? (
           <div className="up-next-wrap">
             <div className="completed-status">
-              <CheckCircleIcon size={16} />
+              <CheckBadgeIcon size={17} />
               Completed
             </div>
             <div className="up-next-row">
