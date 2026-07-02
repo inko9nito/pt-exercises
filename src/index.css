@@ -1073,7 +1073,9 @@ button {
   height: 280px;
   background: var(--white);
   overflow: hidden;
-  touch-action: pan-y;
+  /* We own the gesture (axis-locked swipe vs. vertical scroll passthrough),
+     so the browser must not hijack the vertical part of a diagonal swipe. */
+  touch-action: none;
   border-bottom: 1px solid var(--border);
 }
 
