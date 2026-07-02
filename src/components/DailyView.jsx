@@ -203,11 +203,11 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
             </div>
           </div>
 
-          {due.length > 0 && (
+          {(due.length > 0 || optional.length > 0) && (
             <>
               <div className="section-label">
                 To do
-                <span className="section-count">{due.length}</span>
+                <span className="section-count">{due.length + optional.length}</span>
               </div>
               <div className="row-group">
                 {due.map((ex) => (
@@ -219,11 +219,23 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
                     overdueDays={getDaysOverdue(ex, completions)}
                   />
                 ))}
+                {/* Optional exercises share the To do list, listed after the
+                    required ones and marked with an "Optional" tag, rather
+                    than living in a separate section. */}
+                {optional.map((ex) => (
+                  <ExerciseRow
+                    key={ex.id}
+                    exercise={ex}
+                    completions={completions}
+                    onOpen={onOpenExercise}
+                    optional
+                  />
+                ))}
               </div>
             </>
           )}
 
-          {due.length === 0 && laterToday.length === 0 && (
+          {due.length === 0 && laterToday.length === 0 && optional.length === 0 && (
             <div className="all-done-state">
               <div className="all-done-icon">
                 <CheckIcon size={26} />
@@ -241,25 +253,6 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
               </div>
               <div className="row-group">
                 {laterToday.map((ex) => (
-                  <ExerciseRow
-                    key={ex.id}
-                    exercise={ex}
-                    completions={completions}
-                    onOpen={onOpenExercise}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-
-          {optional.length > 0 && (
-            <>
-              <div className="section-label" style={{ marginTop: 28 }}>
-                Optional
-                <span className="section-count">{optional.length}</span>
-              </div>
-              <div className="row-group">
-                {optional.map((ex) => (
                   <ExerciseRow
                     key={ex.id}
                     exercise={ex}

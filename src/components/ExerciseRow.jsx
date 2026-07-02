@@ -3,14 +3,18 @@ import { LOCATION_LABEL, FREQ } from '../data/exercises.js';
 import { isToday, isOptionalToday, isDueToday, getNextDueEstimate } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
 
-export default function ExerciseRow({ exercise, completions, onOpen, extra = false, overdueDays = 0 }) {
+export default function ExerciseRow({ exercise, completions, onOpen, extra = false, overdueDays = 0, optional: forceOptional = false }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   const todayCount = history.filter(isToday).length;
   const isMultipleDaily = exercise.freqType === FREQ.MULTIPLE_DAILY;
   const isOpenEnded = exercise.freqType === FREQ.HOURLY || exercise.freqType === FREQ.AS_NEEDED;
   const maxPerDay = exercise.maxPerDay || 99;
-  const optional = isOptionalToday(exercise, completions);
+  // Optional rows live in "To do" tagged as optional. As-needed exercises are
+  // optional every day ("Optional"); an every-other-day one done yesterday is
+  // optional only for today ("Optional today").
+  const optional = forceOptional || isOptionalToday(exercise, completions);
+  const optionalLabel = exercise.freqType === FREQ.AS_NEEDED ? 'Optional' : 'Optional today';
   const due = isDueToday(exercise, completions);
   const nextDue = getNextDueEstimate(exercise, completions);
   const lastDoneAt =
@@ -27,7 +31,7 @@ export default function ExerciseRow({ exercise, completions, onOpen, extra = fal
         <span className="row-name">{exercise.name}</span>
         <span className="row-meta">
           {optional ? (
-            <span className="optional-tag">Optional today</span>
+            <span className="optional-tag">{optionalLabel}</span>
           ) : due && lastDoneAt ? (
             <span className="optional-tag">Last done {lastDoneAt}</span>
           ) : nextDue ? (
