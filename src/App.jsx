@@ -163,15 +163,20 @@ export default function App() {
   }, []);
 
   // The footer's refresh button is an escape hatch for "is this actually
-  // the latest build" — a plain data resync doesn't help if the stale part
-  // is the JS/CSS bundle itself. Every build's JS/CSS gets a unique
-  // content-hash filename, so a stale disk cache can never serve old code
-  // under a new build's name — the only thing that can go stale is
-  // index.html itself, and a normal reload already re-fetches that. This
-  // app has never registered a service worker, so there's nothing else to
-  // clear; a plain reload is enough.
+  // the latest build". Every build's JS/CSS gets a unique content-hash
+  // filename, so the only thing that can go stale is index.html itself —
+  // and it's the one file that *can't* be hash-busted. GitHub Pages serves
+  // it with Cache-Control: max-age=600, so a plain location.reload() keeps
+  // handing back the cached HTML (still pointing at the old bundle) for up
+  // to ten minutes, and iOS home-screen web apps hold onto it far longer.
+  // Navigating to a URL with a fresh cache-busting query param sidesteps
+  // that: the browser can't serve the previous document from cache under a
+  // URL it hasn't seen, so it re-fetches index.html and picks up the newest
+  // bundle. The current tab is carried along so we land back where we were.
   const handleRefresh = useCallback(() => {
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.set('_', Date.now().toString());
+    window.location.replace(url.toString());
   }, []);
 
   useEffect(() => {
@@ -203,6 +208,17 @@ export default function App() {
       window.removeEventListener('popstate', onPopState);
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
+  }, []);
+
+  // Drop the cache-busting '_' param the refresh button leaves behind so it
+  // doesn't linger in the URL or get bookmarked; a fresh value is minted on
+  // each refresh anyway, so nothing depends on the old one persisting.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('_')) {
+      url.searchParams.delete('_');
+      window.history.replaceState(window.history.state, '', url.toString());
+    }
   }, []);
 
   return (
