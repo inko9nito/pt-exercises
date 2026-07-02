@@ -6,13 +6,17 @@ import Lightbox from './Lightbox.jsx';
 const ANIM_INTERVAL_MS = 900;
 const AXIS_LOCK_PX = 8;
 const SWIPE_THRESHOLD = 40;
+const EDGE_RESISTANCE = 0.35;
 
 export default function ImageCarousel({ images, alt }) {
-  // idx 0 = animated preview slide, idx 1..N = still images (images[idx - 1])
+  // slide 0 = animated preview (when there's more than one frame); the
+  // remaining slides are the individual still images.
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [animFrame, setAnimFrame] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const timerRef = useRef(null);
 
   const hasAnimation = images && images.length > 1;
@@ -29,15 +33,15 @@ export default function ImageCarousel({ images, alt }) {
 
   if (!images || images.length === 0) return null;
 
-  const goTo = (i) => setIdx(((i % slideCount) + slideCount) % slideCount);
+  const goTo = (i) => setIdx(Math.max(0, Math.min(slideCount - 1, i)));
   const prev = (e) => { e.stopPropagation(); goTo(idx - 1); };
   const next = (e) => { e.stopPropagation(); goTo(idx + 1); };
 
-  // Axis-locked gesture: once a drag is clearly horizontal it swipes between
-  // images and never scrolls the page; a clearly-vertical drag is forwarded
-  // to the detail scroll container so the page still scrolls. (touch-action
-  // is none on the carousel so the browser doesn't steal the vertical
-  // component of a diagonal swipe.)
+  // Axis-locked gesture: a horizontal drag slides the track with the finger
+  // and snaps to a slide on release (never scrolling the page); a vertical
+  // drag is forwarded to the detail scroll container so the page still
+  // scrolls. touch-action is none on the carousel so the browser can't steal
+  // the vertical part of a diagonal swipe.
   const gesture = useRef(null);
   const dragged = useRef(false);
 
@@ -61,20 +65,27 @@ export default function ImageCarousel({ images, alt }) {
     if (!g.axis && (Math.abs(dx) > AXIS_LOCK_PX || Math.abs(dy) > AXIS_LOCK_PX)) {
       g.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
       dragged.current = true;
+      if (g.axis === 'x') setDragging(true);
     }
-    if (g.axis === 'y' && g.scroller) {
+    if (g.axis === 'x') {
+      // Rubber-band past the first/last slide instead of a dead stop.
+      const atEdge = (idx === 0 && dx > 0) || (idx === slideCount - 1 && dx < 0);
+      setDragX(atEdge ? dx * EDGE_RESISTANCE : dx);
+    } else if (g.axis === 'y' && g.scroller) {
       g.scroller.scrollTop -= e.clientY - g.lastY;
     }
     g.lastY = e.clientY;
     g.dx = dx;
   };
 
-  const onPointerUp = (e) => {
+  const onPointerUp = () => {
     const g = gesture.current;
     gesture.current = null;
     if (!g || g.axis !== 'x') return;
-    if (g.dx > SWIPE_THRESHOLD) goTo(idx - 1);
-    else if (g.dx < -SWIPE_THRESHOLD) goTo(idx + 1);
+    setDragging(false);
+    setDragX(0);
+    if (g.dx <= -SWIPE_THRESHOLD) goTo(idx + 1);
+    else if (g.dx >= SWIPE_THRESHOLD) goTo(idx - 1);
   };
 
   const swipeHandlers = {
@@ -84,52 +95,63 @@ export default function ImageCarousel({ images, alt }) {
     onPointerCancel: onPointerUp,
   };
 
-  const isAnimSlide = hasAnimation && idx === 0;
-  const stillSrc = isAnimSlide ? null : images[hasAnimation ? idx - 1 : idx];
-
-  const handleImageTap = () => {
-    // Ignore the click that trails a drag so a swipe/scroll doesn't also open
-    // the lightbox or toggle the animation.
+  // Trailing click after a drag shouldn't also open the lightbox / toggle play.
+  const consumedDrag = () => {
     if (dragged.current) {
       dragged.current = false;
-      return;
+      return true;
     }
-    if (isAnimSlide) {
-      setPlaying((p) => !p);
-    } else {
-      const stillIndex = hasAnimation ? idx - 1 : idx;
-      setLightboxIndex(stillIndex);
-    }
+    return false;
+  };
+
+  const togglePlay = (e) => {
+    e.stopPropagation();
+    if (consumedDrag()) return;
+    setPlaying((p) => !p);
+  };
+
+  const openLightbox = (stillIndex) => {
+    if (consumedDrag()) return;
+    setLightboxIndex(stillIndex);
   };
 
   return (
     <>
       <div className="hero-carousel" {...swipeHandlers}>
-        {isAnimSlide ? (
-          <div className="hero-anim" onClick={handleImageTap}>
-            <img
-              src={assetUrl(images[animFrame])}
-              alt={`${alt} — animated preview`}
-              className="hero-img"
-              draggable={false}
-            />
-            <button
-              className="hero-play-toggle"
-              onClick={(e) => { e.stopPropagation(); setPlaying((p) => !p); }}
-              aria-label={playing ? 'Pause animation' : 'Play animation'}
-            >
-              {playing ? <PauseIcon size={13} /> : <PlayIcon size={13} />}
-            </button>
-          </div>
-        ) : (
-          <img
-            src={assetUrl(stillSrc)}
-            alt={`${alt} — step ${hasAnimation ? idx : idx + 1}`}
-            className="hero-img"
-            onClick={handleImageTap}
-            draggable={false}
-          />
-        )}
+        <div
+          className="hero-track"
+          style={{
+            transform: `translateX(calc(${-idx * 100}% + ${dragX}px))`,
+            transition: dragging ? 'none' : 'transform .32s cubic-bezier(0.22, 0.61, 0.36, 1)',
+          }}
+        >
+          {hasAnimation && (
+            <div className="hero-slide">
+              <div className="hero-anim" onClick={togglePlay}>
+                <img
+                  src={assetUrl(images[animFrame])}
+                  alt={`${alt} — animated preview`}
+                  className="hero-img"
+                  draggable={false}
+                />
+                <button className="hero-play-toggle" onClick={togglePlay} aria-label={playing ? 'Pause animation' : 'Play animation'}>
+                  {playing ? <PauseIcon size={13} /> : <PlayIcon size={13} />}
+                </button>
+              </div>
+            </div>
+          )}
+          {images.map((src, i) => (
+            <div className="hero-slide" key={i}>
+              <img
+                src={assetUrl(src)}
+                alt={`${alt} — step ${i + 1}`}
+                className="hero-img"
+                onClick={() => openLightbox(i)}
+                draggable={false}
+              />
+            </div>
+          ))}
+        </div>
 
         {slideCount > 1 && (
           <>
