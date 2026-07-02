@@ -244,6 +244,25 @@ export function getPlanProgress(exercises, completions) {
   return getPlanProgressOn(exercises, completions, new Date());
 }
 
+// Whether a due-today exercise was rolled over from yesterday because it
+// wasn't completed then — i.e. it was on yesterday's plan and not done, so
+// it's still owed today. Only discrete daily/interval exercises can carry
+// over; multiple-daily and hourly cadences reset each day and as-needed is
+// never owed.
+export function isCarriedOver(exercise, completions) {
+  if (
+    exercise.freqType === FREQ.MULTIPLE_DAILY ||
+    exercise.freqType === FREQ.HOURLY ||
+    exercise.freqType === FREQ.AS_NEEDED
+  ) {
+    return false;
+  }
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const history = completions[String(exercise.id)] || [];
+  return isScheduledOn(exercise, completions, yesterday) && !doneOn(history, yesterday);
+}
+
 export function getTodayCount(exercise, completions) {
   const id = String(exercise.id);
   const history = completions[id] || [];
