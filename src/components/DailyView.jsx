@@ -6,7 +6,7 @@ import { CheckCircleIcon, CheckIcon, ChevronRightIcon, PlusIcon } from './Icons.
 import { exercises, FREQ } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
 import {
-  isCarriedOver,
+  getDaysOverdue,
   isDueToday,
   isOptionalToday,
   isRelevantToday,
@@ -205,7 +205,7 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
                     exercise={ex}
                     completions={completions}
                     onOpen={onOpenExercise}
-                    carriedOver={isCarriedOver(ex, completions)}
+                    overdueDays={getDaysOverdue(ex, completions)}
                   />
                 ))}
               </div>

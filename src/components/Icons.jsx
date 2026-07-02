@@ -133,13 +133,6 @@ export const RefreshIcon = ({ size = 14 }) => (
   </svg>
 );
 
-export const CarryOverIcon = ({ size = 12 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 11a6 6 0 0 1 6-6h9" />
-    <polyline points="14 1 18 5 14 9" />
-  </svg>
-);
-
 export const StarIcon = ({ size = 12 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none">
     <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />

@@ -1,9 +1,9 @@
-import { ChevronRightIcon, CheckCircleIcon, StarIcon, CarryOverIcon } from './Icons.jsx';
+import { ChevronRightIcon, CheckCircleIcon, StarIcon, ClockIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ } from '../data/exercises.js';
 import { isToday, isOptionalToday, isDueToday, getNextDueEstimate } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
 
-export default function ExerciseRow({ exercise, completions, onOpen, extra = false, carriedOver = false }) {
+export default function ExerciseRow({ exercise, completions, onOpen, extra = false, overdueDays = 0 }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   const todayCount = history.filter(isToday).length;
@@ -42,10 +42,10 @@ export default function ExerciseRow({ exercise, completions, onOpen, extra = fal
           {' · '}
           {LOCATION_LABEL[exercise.location]}
         </span>
-        {carriedOver && (
-          <span className="row-carryover-badge">
-            <CarryOverIcon size={12} />
-            Carried over
+        {overdueDays > 0 && (
+          <span className="row-overdue-badge">
+            <ClockIcon size={12} />
+            {overdueDays} {overdueDays === 1 ? 'day' : 'days'} overdue
           </span>
         )}
       </span>

@@ -244,23 +244,37 @@ export function getPlanProgress(exercises, completions) {
   return getPlanProgressOn(exercises, completions, new Date());
 }
 
-// Whether a due-today exercise was rolled over from yesterday because it
-// wasn't completed then — i.e. it was on yesterday's plan and not done, so
-// it's still owed today. Only discrete daily/interval exercises can carry
-// over; multiple-daily and hourly cadences reset each day and as-needed is
-// never owed.
-export function isCarriedOver(exercise, completions) {
+// How many days past its due date a currently-due exercise is (0 = due today
+// / on time, or not applicable). Counts consecutive prior days — starting
+// yesterday — on which it was scheduled and not done; for interval exercises
+// that equals the number of days since its due date. Exercises never done
+// before today have no baseline to measure from, so they return 0 rather
+// than an astronomically large count. Multiple-daily/hourly reset each day
+// and as-needed is never owed, so they never accrue overdue days.
+export function getDaysOverdue(exercise, completions) {
   if (
     exercise.freqType === FREQ.MULTIPLE_DAILY ||
     exercise.freqType === FREQ.HOURLY ||
     exercise.freqType === FREQ.AS_NEEDED
   ) {
-    return false;
+    return 0;
   }
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
   const history = completions[String(exercise.id)] || [];
-  return isScheduledOn(exercise, completions, yesterday) && !doneOn(history, yesterday);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  if (!history.some((iso) => new Date(iso) < startOfToday)) return 0;
+
+  let count = 0;
+  const cursor = new Date();
+  for (let i = 0; i < 365; i++) {
+    cursor.setDate(cursor.getDate() - 1);
+    if (isScheduledOn(exercise, completions, cursor) && !doneOn(history, cursor)) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  return count;
 }
 
 export function getTodayCount(exercise, completions) {
