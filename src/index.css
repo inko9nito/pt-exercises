@@ -14,9 +14,11 @@
   --ink-2:          #52525B;
   --ink-3:          #A1A1AA;
 
-  --accent:         #56705A;
-  --accent-hover:   #435A47;
-  --accent-soft:    #EBF0E9;
+  /* Sampled directly from the app icon's background (#739578). Hover is a
+     darker sage for pressed states; soft is a pale tint for fills/glows. */
+  --accent:         #739578;
+  --accent-hover:   #5E7A62;
+  --accent-soft:    #E9EFEA;
 
   /* One green across the whole app: the app icon's sage (--accent). The
      "success" tokens alias it so every green surface — completion rings,
