@@ -242,7 +242,6 @@ button {
 }
 
 .week-day-label.is-selected {
-  font-weight: 800;
   color: var(--ink);
 }
 
