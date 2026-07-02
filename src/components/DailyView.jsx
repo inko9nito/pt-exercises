@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react';
 import ExerciseRow from './ExerciseRow.jsx';
 import WeekStrip from './WeekStrip.jsx';
 import AddExerciseSheet from './AddExerciseSheet.jsx';
-import { CheckCircleIcon, CheckIcon, ChevronRightIcon, PlusIcon } from './Icons.jsx';
+import { CheckCircleIcon, CheckIcon, ChevronRightIcon, PlusIcon, StarIcon } from './Icons.jsx';
 import { exercises, FREQ } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
 import {
   getDaysOverdue,
+  isScheduledOn,
   isDueToday,
   isOptionalToday,
   isRelevantToday,
@@ -139,6 +140,10 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
               {selectedDayCards.map((card) => {
                 const ex = exerciseById.get(card.id);
                 if (!ex) return null;
+                // "Extra" = wasn't on that specific day's plan (optional or
+                // logged as an unscheduled add), same rule as today's
+                // Completed section but evaluated for the selected date.
+                const extra = !isScheduledOn(ex, completions, new Date(`${selectedDate}T12:00:00`));
                 return (
                   <button key={card.id} className="exercise-row" onClick={() => onOpenExercise(ex)}>
                     <span className="row-thumb">
@@ -152,6 +157,12 @@ export default function DailyView({ completions, onOpenExercise, onLogForDate })
                           : `Done ${card.times[0]}`}
                       </span>
                     </span>
+                    {extra && (
+                      <span className="row-extra-badge">
+                        <StarIcon size={11} />
+                        Extra
+                      </span>
+                    )}
                     <span className="row-status-check">
                       <CheckCircleIcon size={20} />
                     </span>
