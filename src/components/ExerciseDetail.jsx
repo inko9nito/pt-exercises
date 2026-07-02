@@ -211,7 +211,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
               onClick={() => onMarkDone(exercise.id)}
             >
               <CheckIcon size={18} />
-              {completedToday ? 'Completed' : 'Mark complete'}
+              {completedToday ? 'Completed' : 'Log session'}
             </button>
             {history.length > 0 && (
               <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
