@@ -4,7 +4,7 @@ import AllExercises from './components/AllExercises.jsx';
 import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, RefreshIcon } from './components/Icons.jsx';
-import { loadCompletions, saveCompletions, markDone, undoLast } from './utils/tracker.js';
+import { loadCompletions, saveCompletions, markDone, markDoneOn, undoLast } from './utils/tracker.js';
 import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
 
 const TAB_TODAY = 'today';
@@ -80,6 +80,16 @@ export default function App() {
   const handleMarkDone = useCallback((exerciseId) => {
     setCompletions((prev) => {
       const next = markDone(prev, exerciseId);
+      saveCompletions(next);
+      pushCompletions(next);
+      return next;
+    });
+  }, []);
+
+  // Retroactive logging from a past day's detail view (issue #21).
+  const handleLogForDate = useCallback((exerciseId, date) => {
+    setCompletions((prev) => {
+      const next = markDoneOn(prev, exerciseId, date);
       saveCompletions(next);
       pushCompletions(next);
       return next;
@@ -182,7 +192,11 @@ export default function App() {
     <div className="app">
       <main className="app-main">
         {tab === TAB_TODAY && (
-          <DailyView completions={completions} onOpenExercise={openExercise} />
+          <DailyView
+            completions={completions}
+            onOpenExercise={openExercise}
+            onLogForDate={handleLogForDate}
+          />
         )}
         {tab === TAB_ALL && (
           <AllExercises completions={completions} onOpenExercise={openExercise} />

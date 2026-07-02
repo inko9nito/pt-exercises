@@ -471,6 +471,19 @@ button {
   display: flex;
 }
 
+.row-extra-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #D97706;
+  background: #FEF3C7;
+  padding: 4px 9px;
+  border-radius: var(--radius-pill);
+}
+
 .row-status-badge {
   flex-shrink: 0;
   font-size: 12px;

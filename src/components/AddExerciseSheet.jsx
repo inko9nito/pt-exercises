@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import ExerciseRow from './ExerciseRow.jsx';
 import { ChevronLeftIcon, SearchIcon } from './Icons.jsx';
 
-export default function AddExerciseSheet({ exercises, completions, onOpenExercise, onClose }) {
+export default function AddExerciseSheet({ exercises, completions, onOpenExercise, onClose, title = 'Log another exercise' }) {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -19,7 +19,7 @@ export default function AddExerciseSheet({ exercises, completions, onOpenExercis
         <button className="back-button" onClick={onClose} aria-label="Close">
           <ChevronLeftIcon size={22} />
         </button>
-        <span className="detail-header-title">Log another exercise</span>
+        <span className="detail-header-title">{title}</span>
         <span className="detail-header-spacer" />
       </div>
 

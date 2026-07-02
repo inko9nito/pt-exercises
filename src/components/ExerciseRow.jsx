@@ -1,9 +1,9 @@
-import { ChevronRightIcon, CheckCircleIcon } from './Icons.jsx';
+import { ChevronRightIcon, CheckCircleIcon, StarIcon } from './Icons.jsx';
 import { LOCATION_LABEL, FREQ } from '../data/exercises.js';
 import { isToday, isOptionalToday, isDueToday, getNextDueEstimate } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
 
-export default function ExerciseRow({ exercise, completions, onOpen }) {
+export default function ExerciseRow({ exercise, completions, onOpen, extra = false }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   const todayCount = history.filter(isToday).length;
@@ -43,6 +43,12 @@ export default function ExerciseRow({ exercise, completions, onOpen }) {
           {LOCATION_LABEL[exercise.location]}
         </span>
       </span>
+      {extra && (
+        <span className="row-extra-badge">
+          <StarIcon size={11} />
+          Extra
+        </span>
+      )}
       {isMultipleDaily && (
         <span className={`row-status-badge ${todayCount >= maxPerDay ? 'complete' : ''}`}>
           {todayCount}/{maxPerDay}

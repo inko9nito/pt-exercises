@@ -2,18 +2,22 @@ import { useMemo, useState } from 'react';
 import ExerciseRow from './ExerciseRow.jsx';
 import WeekStrip from './WeekStrip.jsx';
 import AddExerciseSheet from './AddExerciseSheet.jsx';
-import { CheckIcon, PlusIcon } from './Icons.jsx';
+import { CheckCircleIcon, CheckIcon, ChevronRightIcon, PlusIcon } from './Icons.jsx';
 import { exercises, FREQ } from '../data/exercises.js';
+import { assetUrl } from '../utils/asset.js';
 import {
   isDueToday,
   isOptionalToday,
   isRelevantToday,
+  isScheduledToday,
   isToday,
   getTodayCount,
   getPlanProgress,
   dateKey,
   getCompletionDateMap,
 } from '../utils/tracker.js';
+
+const exerciseById = new Map(exercises.map((ex) => [ex.id, ex]));
 
 function formatDateLong(key) {
   const date = new Date(`${key}T00:00:00`);
@@ -24,7 +28,7 @@ function formatDateLong(key) {
   });
 }
 
-export default function DailyView({ completions, onOpenExercise }) {
+export default function DailyView({ completions, onOpenExercise, onLogForDate }) {
   const today = new Date();
   const todayKey = dateKey(today);
   const [selectedDate, setSelectedDate] = useState(todayKey);
@@ -100,10 +104,21 @@ export default function DailyView({ completions, onOpenExercise }) {
   );
 
   // Due/optional/not-due status is only meaningful for today — a past or
-  // future day in the week strip just shows what was actually logged then,
-  // the same read-only "day detail" pattern the Progress tab's calendar uses.
+  // future day in the week strip just shows what was actually logged then.
   const dateMap = useMemo(() => getCompletionDateMap(completions, exercises), [completions]);
-  const selectedDayItems = !isViewingToday ? dateMap.get(selectedDate) || [] : null;
+
+  // Group that day's sessions by exercise so each renders as a single card
+  // (like today's list) carrying the time(s) it was done, rather than one
+  // text line per session.
+  const selectedDayCards = useMemo(() => {
+    if (isViewingToday) return null;
+    const byId = new Map();
+    for (const item of dateMap.get(selectedDate) || []) {
+      if (!byId.has(item.id)) byId.set(item.id, { id: item.id, times: [] });
+      byId.get(item.id).times.push(item.time);
+    }
+    return Array.from(byId.values());
+  }, [isViewingToday, dateMap, selectedDate]);
 
   return (
     <div className="daily-view">
@@ -118,18 +133,42 @@ export default function DailyView({ completions, onOpenExercise }) {
       {!isViewingToday ? (
         <div className="day-detail-view">
           <p className="day-detail-title">{formatDateLong(selectedDate)}</p>
-          {selectedDayItems.length > 0 ? (
-            <div className="day-detail-list">
-              {selectedDayItems.map((item, i) => (
-                <div key={i} className="day-detail-item">
-                  <span className="day-detail-name">{item.name}</span>
-                  <span className="day-detail-time">{item.time}</span>
-                </div>
-              ))}
+          {selectedDayCards.length > 0 ? (
+            <div className="row-group">
+              {selectedDayCards.map((card) => {
+                const ex = exerciseById.get(card.id);
+                if (!ex) return null;
+                return (
+                  <button key={card.id} className="exercise-row" onClick={() => onOpenExercise(ex)}>
+                    <span className="row-thumb">
+                      <img src={assetUrl(ex.images[0])} alt="" loading="lazy" />
+                    </span>
+                    <span className="row-body">
+                      <span className="row-name">{ex.name}</span>
+                      <span className="row-meta">
+                        {card.times.length > 1
+                          ? `${card.times.length}× · ${card.times.join(', ')}`
+                          : `Done ${card.times[0]}`}
+                      </span>
+                    </span>
+                    <span className="row-status-check">
+                      <CheckCircleIcon size={20} />
+                    </span>
+                    <span className="row-chevron">
+                      <ChevronRightIcon size={18} />
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <p className="day-detail-empty">Nothing logged this day.</p>
           )}
+
+          <button className="add-exercise-btn" onClick={() => setShowAddSheet(true)}>
+            <PlusIcon size={16} />
+            Log an exercise for this day
+          </button>
         </div>
       ) : (
         <>
@@ -208,6 +247,7 @@ export default function DailyView({ completions, onOpenExercise }) {
                     exercise={ex}
                     completions={completions}
                     onOpen={onOpenExercise}
+                    extra={!isScheduledToday(ex, completions)}
                   />
                 ))}
               </div>
@@ -216,13 +256,29 @@ export default function DailyView({ completions, onOpenExercise }) {
         </>
       )}
 
-      {showAddSheet && (
+      {showAddSheet && isViewingToday && (
         <AddExerciseSheet
           exercises={notScheduledToday}
           completions={completions}
           onOpenExercise={(ex) => {
             setShowAddSheet(false);
             onOpenExercise(ex);
+          }}
+          onClose={() => setShowAddSheet(false)}
+        />
+      )}
+
+      {showAddSheet && !isViewingToday && (
+        // Past day: tapping an exercise logs it *for that day* (retroactively)
+        // rather than opening it — you're recording something you forgot, not
+        // doing it now. Any exercise can be added, so the full list is offered.
+        <AddExerciseSheet
+          title={`Log for ${formatDateLong(selectedDate)}`}
+          exercises={exercises}
+          completions={completions}
+          onOpenExercise={(ex) => {
+            setShowAddSheet(false);
+            onLogForDate(ex.id, new Date(`${selectedDate}T12:00:00`));
           }}
           onClose={() => setShowAddSheet(false)}
         />

@@ -34,6 +34,19 @@ export function markDone(completions, exerciseId) {
   return { ...completions, [id]: [...prev, new Date().toISOString()] };
 }
 
+// Retroactively log a session on a past day (for something that was done but
+// forgotten). Stamped at local noon since the exact time doesn't matter, and
+// the history is kept chronologically sorted so "last done" (history's last
+// element) stays the most recent session even after a back-dated insert.
+export function markDoneOn(completions, exerciseId, date) {
+  const id = String(exerciseId);
+  const prev = completions[id] || [];
+  const stamp = new Date(date);
+  stamp.setHours(12, 0, 0, 0);
+  const next = [...prev, stamp.toISOString()].sort();
+  return { ...completions, [id]: next };
+}
+
 export function undoLast(completions, exerciseId) {
   const id = String(exerciseId);
   const prev = completions[id] || [];
