@@ -193,20 +193,28 @@ button {
   color: var(--accent);
 }
 
+/* Icon + label grouped so the selected-tab box (like Headspace's Search tab)
+   wraps both, not just the icon. */
+.nav-tab-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 18px;
+  border-radius: 20px;
+  transition: background .15s;
+}
+
+.nav-tab.active .nav-tab-box {
+  background: var(--accent-soft);
+}
+
 .nav-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 30px;
-  padding: 0 18px;
-  border-radius: var(--radius-pill);
-  transition: background .15s;
-}
-
-/* Selected tab: a green-tinted rounded box behind the icon (like the
-   Search tab in Headspace), with the icon and label in the app-icon green. */
-.nav-tab.active .nav-icon {
-  background: var(--accent-soft);
+  width: 22px;
+  height: 22px;
 }
 
 .nav-label {

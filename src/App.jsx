@@ -229,22 +229,28 @@ export default function App() {
           className={`nav-tab ${tab === TAB_TODAY ? 'active' : ''}`}
           onClick={() => setTab(TAB_TODAY)}
         >
-          <span className="nav-icon"><CalendarIcon size={22} /></span>
-          <span className="nav-label">Today</span>
+          <span className="nav-tab-box">
+            <span className="nav-icon"><CalendarIcon size={22} /></span>
+            <span className="nav-label">Today</span>
+          </span>
         </button>
         <button
           className={`nav-tab ${tab === TAB_ALL ? 'active' : ''}`}
           onClick={() => setTab(TAB_ALL)}
         >
-          <span className="nav-icon"><ListIcon size={22} /></span>
-          <span className="nav-label">All exercises</span>
+          <span className="nav-tab-box">
+            <span className="nav-icon"><ListIcon size={22} /></span>
+            <span className="nav-label">All exercises</span>
+          </span>
         </button>
         <button
           className={`nav-tab ${tab === TAB_PROGRESS ? 'active' : ''}`}
           onClick={() => setTab(TAB_PROGRESS)}
         >
-          <span className="nav-icon"><TrendingUpIcon size={22} /></span>
-          <span className="nav-label">Progress</span>
+          <span className="nav-tab-box">
+            <span className="nav-icon"><TrendingUpIcon size={22} /></span>
+            <span className="nav-label">Progress</span>
+          </span>
         </button>
       </nav>
 
