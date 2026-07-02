@@ -12,7 +12,8 @@ function pluralize(value, singular, plural) {
 export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onRemoveFromLog, onClose, onNext, logDate, closing }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
-  const todayCount = history.filter(isToday).length;
+  const todaySessions = history.filter(isToday);
+  const todayCount = todaySessions.length;
   const lastDoneDate = history.length > 0 ? new Date(history[history.length - 1]) : null;
 
   // Opened from a day's log (Progress calendar or a past day): the only
@@ -120,9 +121,30 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
             <p className="detail-description">{exercise.description}</p>
           </div>
 
+          {!isMultipleDaily && todaySessions.length > 0 && (
+            <div className="detail-section">
+              <p className="detail-section-label">
+                Today's sessions
+                <span className="session-log-count">
+                  {exercise.dailyTarget ? `${todaySessions.length} of ${exercise.dailyTarget}` : todaySessions.length}
+                </span>
+              </p>
+              <div className="session-log">
+                {todaySessions.map((iso, i) => (
+                  <div className="session-log-row" key={iso}>
+                    <span className="session-log-num">{i + 1}</span>
+                    <span className="session-log-time">
+                      {new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <p className="detail-last-done">
             Last done <strong>{formatLastDone(lastDoneDate)}</strong>
-            {(isMultipleDaily || isHourly || isAsNeeded) && todayCount > 0 && ` · ${todayCount}× today`}
+            {isMultipleDaily && todayCount > 0 && ` · ${todayCount}× today`}
           </p>
 
           {nextDue && (
@@ -205,20 +227,28 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
             </div>
           </div>
         ) : (
-          <>
-            <button
-              className={`btn-complete ${completedToday ? 'completed' : ''}`}
-              onClick={() => onMarkDone(exercise.id)}
-            >
-              <CheckIcon size={18} />
-              {completedToday ? 'Completed' : 'Log session'}
-            </button>
-            {history.length > 0 && (
-              <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
-                <UndoIcon size={18} />
-              </button>
+          <div className="complete-wrap">
+            {!completedToday && todayCount > 0 && (
+              <div className="log-status">
+                <CheckBadgeIcon size={16} />
+                {todayCount} logged today{exercise.dailyTarget ? ` · ${todayCount} of ${exercise.dailyTarget}` : ''}
+              </div>
             )}
-          </>
+            <div className="complete-row">
+              <button
+                className={`btn-complete ${completedToday ? 'completed' : ''}`}
+                onClick={() => onMarkDone(exercise.id)}
+              >
+                <CheckIcon size={18} />
+                {completedToday ? 'Completed' : 'Log session'}
+              </button>
+              {history.length > 0 && (
+                <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
+                  <UndoIcon size={18} />
+                </button>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
