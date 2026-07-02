@@ -1114,8 +1114,8 @@ button {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: rgba(255,255,255,.95);
   border: 1px solid rgba(0,0,0,.08);
@@ -1124,6 +1124,16 @@ button {
   justify-content: center;
   color: var(--ink);
   box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+
+/* Invisible halo enlarges the touch target to ~54px (well past the 44pt
+   minimum) without growing the visible circle, so it's easy to hit and
+   hard to mis-tap onto the image. */
+.hero-arrow::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
 }
 
 .hero-arrow-left { left: 12px; }
