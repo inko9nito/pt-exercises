@@ -988,12 +988,15 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  /* Stretch to match the sibling it sits beside (the "Mark complete" button
+     or the "Up next" card) instead of a fixed height that leaves it a
+     different size and misaligned. */
+  align-self: stretch;
   border-radius: var(--radius-sm);
   background: var(--bg);
   border: 1px solid var(--border);
-  color: var(--ink-3);
+  color: var(--ink-2);
   flex-shrink: 0;
   transition: background .15s, color .15s;
 }
