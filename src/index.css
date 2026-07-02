@@ -66,7 +66,7 @@
   --shadow-raised: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
 
   /* Layout */
-  --nav-height:    60px;
+  --nav-height:    66px;
   --max-width:     640px;
 
   /* Font */
@@ -180,13 +180,10 @@ button {
 .nav-tab {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
   color: var(--ink-3);
   transition: color .15s;
-  padding: 8px 0 12px;
 }
 
 .nav-tab.active {
@@ -194,19 +191,23 @@ button {
 }
 
 /* Icon + label grouped so the selected-tab box (like Headspace's Search tab)
-   wraps both, not just the icon. */
+   wraps both. The box is a fixed share of each equal-width tab cell — so it's
+   the same size regardless of label length (per Apple's tab-bar guidance) —
+   and vertically centred so it floats clear of the bar's top edge. */
 .nav-tab-box {
+  width: calc(100% - 14px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 7px 18px;
-  border-radius: 20px;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 0;
+  border-radius: 18px;
   transition: background .15s;
 }
 
 .nav-tab.active .nav-tab-box {
-  background: var(--accent-soft);
+  background: rgba(106, 163, 122, 0.12);
 }
 
 .nav-icon {
