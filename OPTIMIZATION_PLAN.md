@@ -215,6 +215,18 @@ These are small and worth folding in, but confirm against tests first.
   index-based against the `exercises` array so it can't silently break if an id
   is ever removed (relevant if #33's data edits renumber anything — they
   shouldn't, but note it).
+- **E4. Issue #43 (open): undo can silently delete a past day's session.**
+  `ExerciseDetail` renders its undo button whenever `history.length > 0` — even
+  when nothing has been logged *today* — and `undoLast` removes the *globally
+  most-recent* session. For an every-other-day exercise done Tuesday, opening
+  it today shows "Log session" alongside an undo that deletes Tuesday's log.
+  Fix: gate the undo button on `todayCount > 0`, and scope the action to
+  today's sessions (route `onUndo` through
+  `removeSessionOn(completions, id, new Date())` instead of `undoLast` — the
+  same day-scoped helper #28 added; `undoLast` likely becomes dead code and
+  can be removed). Add regression tests: undo hidden with no session today;
+  undo with sessions on multiple days only removes today's. This is the
+  highest-priority E item — it's live data loss.
 
 ---
 
@@ -224,9 +236,9 @@ These open issues are **features/UX**, not optimization, and should be separate
 tracked work (listed so the implementer doesn't scope-creep into them):
 #3 (notes field), #13 (Today rollover logic), #18 (theme/colors), #24 (timer),
 #25 (landscape/iPad responsiveness), #27 (postpone/reschedule), #35 (refresh
-transition), #37 ("log another" sheet transition). Only **#33** and **#40** are
-in scope here because they are cleanup/dead-code and a latent logic bug
-respectively.
+transition), #37 ("log another" sheet transition). Only **#33**, **#40**, and
+**#43** are in scope here — cleanup/dead-code, a latent logic bug, and a
+data-loss undo bug respectively.
 
 ---
 
@@ -242,6 +254,11 @@ respectively.
    `getDaysOverdue`, `React.memo`. (B1, B2, B4, B5)
 5. **PR5 — Sync:** scoped Firebase writes + simplify trust guard. (B6, C4)
 6. **PR6 — Correctness:** #40 "All caught up", small E-series items. (E1–E3)
+
+**Exception to the ordering:** E4 (#43) is live data loss — a mis-tap deletes a
+past day's session. Ship it as a small hotfix PR **first** (or folded into PR1
+with its regression tests); don't hold it behind the refactor train. The fix
+only needs the existing `removeSessionOn` helper.
 
 Each PR should keep `npm test` green; PRs 3–5 must not change any test
 assertions (pure refactors). PR2 and PR6 update tests to match the intended
