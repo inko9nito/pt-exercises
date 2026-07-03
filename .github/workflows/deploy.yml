@@ -1,0 +1,53 @@
+name: Deploy
+
+# Builds main and publishes it to the production root of the gh-pages
+# branch, replacing the old practice of manually running `vite build` and
+# pushing dist/ by hand. Shares gh-pages with pr-preview.yml's per-PR
+# subpaths (pr-42/, etc.) — only the root-level production files are
+# replaced here; preview subdirectories are left untouched.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to gh-pages root
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          git clone --branch gh-pages --depth 1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" gh-pages-deploy
+          cd gh-pages-deploy
+          # Clear the production root without touching pr-*/ preview subpaths.
+          find . -mindepth 1 -maxdepth 1 ! -name 'pr-*' ! -name '.git' -exec rm -rf {} +
+          cp -r ../dist/. .
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy ${{ github.sha }}" --allow-empty
+          git push origin HEAD:gh-pages
