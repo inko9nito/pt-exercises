@@ -197,25 +197,33 @@ D1 doesn't already absorb it.
 
 ## Workstream E — Correctness cleanups surfaced while reviewing
 
-These are small and worth folding in, but confirm against tests first.
+**Status: deferred.** E1–E3 below (and the PR6 slot that held them) are
+intentionally **not** part of the active PR sequence — E1 is already tracked
+directly on issue #40 and isn't urgent, and E2/E3 are minor, non-urgent
+polish bundled alongside it. Left documented here for whenever #40 gets
+picked up on its own; nothing further to do for them as part of this cleanup
+effort. E4 is the exception — it was real data loss and has already shipped
+(merged via #44, ahead of the rest of this plan).
 
-- **E1. Issue #40 (open): as-needed breaks "All caught up."** Because "General
-  neck massage" is `AS_NEEDED`, `DailyView` always pushes it into `optional`, so
-  the `due.length === 0 && laterToday === 0 && optional === 0` "All caught up"
-  state can never render while an as-needed exercise exists. Decide the intended
-  rule (e.g. as-needed shouldn't block the caught-up state) and encode it — this
-  is a behavior change the issue explicitly wants.
-- **E2. `ExerciseCarousel`/`Lightbox` axis-lock vs `useSwipe`.** `ImageCarousel`
-  hand-rolls its own axis-locked pointer gesture while `useSwipe` exists for
-  `WeekStrip`. They're intentionally different (one drags a track, one is a
-  threshold swipe) — **don't force a merge**, but document why, or extract the
-  shared axis-lock primitive if it stays readable.
-- **E3. `nextExercise = id + 1` coupling.** `ExerciseDetail` computes "Up next"
-  as `exercise.id + 1`, assuming contiguous integer ids. Fine today; make it
-  index-based against the `exercises` array so it can't silently break if an id
-  is ever removed (relevant if #33's data edits renumber anything — they
-  shouldn't, but note it).
-- **E4. Issue #43 (open): undo can silently delete a past day's session.**
+- **E1. Issue #40 (open, deferred): as-needed breaks "All caught up."** Because
+  "General neck massage" is `AS_NEEDED`, `DailyView` always pushes it into
+  `optional`, so the `due.length === 0 && laterToday === 0 && optional === 0`
+  "All caught up" state can never render while an as-needed exercise exists.
+  Decide the intended rule (e.g. as-needed shouldn't block the caught-up state)
+  and encode it — this is a behavior change the issue explicitly wants. Track
+  and fix this directly against #40 whenever it's picked up; no dedicated PR in
+  this sequence.
+- **E2. `ExerciseCarousel`/`Lightbox` axis-lock vs `useSwipe`. (deferred)**
+  `ImageCarousel` hand-rolls its own axis-locked pointer gesture while
+  `useSwipe` exists for `WeekStrip`. They're intentionally different (one drags
+  a track, one is a threshold swipe) — **don't force a merge**, but document
+  why, or extract the shared axis-lock primitive if it stays readable. Minor;
+  not worth its own PR right now.
+- **E3. `nextExercise = id + 1` coupling. (deferred)** `ExerciseDetail`
+  computes "Up next" as `exercise.id + 1`, assuming contiguous integer ids.
+  Fine today; make it index-based against the `exercises` array so it can't
+  silently break if an id is ever removed. Minor robustness note, not urgent.
+- **E4. Issue #43 (done — merged via #44): undo can silently delete a past day's session.**
   `ExerciseDetail` renders its undo button whenever `history.length > 0` — even
   when nothing has been logged *today* — and `undoLast` removes the *globally
   most-recent* session. For an every-other-day exercise done Tuesday, opening
@@ -236,30 +244,37 @@ These open issues are **features/UX**, not optimization, and should be separate
 tracked work (listed so the implementer doesn't scope-creep into them):
 #3 (notes field), #13 (Today rollover logic), #18 (theme/colors), #24 (timer),
 #25 (landscape/iPad responsiveness), #27 (postpone/reschedule), #35 (refresh
-transition), #37 ("log another" sheet transition). Only **#33**, **#40**, and
-**#43** are in scope here — cleanup/dead-code, a latent logic bug, and a
-data-loss undo bug respectively.
+transition), #37 ("log another" sheet transition). **#43** was in scope and is
+done. **#33** is in scope (PR2). **#40** is explicitly deferred — see
+Workstream E — and tracked on its own issue rather than as a PR in this
+sequence. Issue #49 (repo-wide Prettier reformat) is also deferred/skipped for
+now, not urgent.
 
 ---
 
 ## Suggested PR sequence
 
-1. **PR1 — Safety net:** Vitest + `tracker.js` tests, ESLint/Prettier, session
-   hook. (Workstream A)
-2. **PR2 — Dead code:** remove indoor/outdoor (#33) + de-dupe constants/helpers.
-   (C1, C2) — behavior-preserving except the intended #33 removal.
+0. **Hotfix — done, merged (#44).** E4 (#43): undo silently deleting a prior
+   day's session. Shipped ahead of the sequence since it was live data loss.
+1. **PR1 — Safety net: done, open (#48).** Vitest + `tracker.js` tests,
+   ESLint/Prettier, session hook. (Workstream A)
+2. **PR2 — Dead code: done, open (#50, stacked on #48).** Removed
+   indoor/outdoor (#33) + de-duped constants/helpers. (C1, C2) —
+   behavior-preserving except the intended #33 removal.
 3. **PR3 — Shared components:** `DayLogList` extraction + shared today-model
    selector. (C3, D1)
 4. **PR4 — Perf core:** `buildIndex(completions)` + rewire predicates, fix
    `getDaysOverdue`, `React.memo`. (B1, B2, B4, B5)
 5. **PR5 — Sync:** scoped Firebase writes + simplify trust guard. (B6, C4)
-6. **PR6 — Correctness:** #40 "All caught up", small E-series items. (E1–E3)
 
-**Exception to the ordering:** E4 (#43) is live data loss — a mis-tap deletes a
-past day's session. Ship it as a small hotfix PR **first** (or folded into PR1
-with its regression tests); don't hold it behind the refactor train. The fix
-only needs the existing `removeSessionOn` helper.
+**PR6 is skipped.** It would have covered #40 ("All caught up") plus the minor
+E2/E3 polish — deferred as not urgent; see Workstream E. #40 stays open as its
+own issue and can be picked up directly, independent of this PR sequence,
+whenever it's prioritized.
+
+The active sequence for this cleanup effort now ends at **PR5**. Issue #49
+(repo-wide Prettier reformat) is likewise deferred/skipped — not urgent, and
+was already scoped to come after this sequence anyway.
 
 Each PR should keep `npm test` green; PRs 3–5 must not change any test
-assertions (pure refactors). PR2 and PR6 update tests to match the intended
-behavior changes.
+assertions (pure refactors).
