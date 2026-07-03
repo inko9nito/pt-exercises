@@ -191,7 +191,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
                   <ChevronRightIcon size={18} />
                 </span>
               </button>
-              {history.length > 0 && (
+              {todayCount > 0 && (
                 <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
                   <UndoIcon size={18} />
                 </button>
@@ -216,7 +216,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
                 <CheckIcon size={18} />
                 {completedToday ? 'Completed' : 'Log session'}
               </button>
-              {history.length > 0 && (
+              {todayCount > 0 && (
                 <button className="btn-undo" onClick={() => onUndo(exercise.id)} aria-label="Undo">
                   <UndoIcon size={18} />
                 </button>
