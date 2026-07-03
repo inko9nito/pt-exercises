@@ -47,16 +47,10 @@ export function markDoneOn(completions, exerciseId, date) {
   return { ...completions, [id]: next };
 }
 
-export function undoLast(completions, exerciseId) {
-  const id = String(exerciseId);
-  const prev = completions[id] || [];
-  if (prev.length === 0) return completions;
-  return { ...completions, [id]: prev.slice(0, -1) };
-}
-
 // Remove a single logged session on a specific day (the most recent one that
-// day) — used when reviewing a past day's log and pulling out an entry,
-// rather than undoLast which always drops the globally-latest session.
+// day). Used both for the exercise-detail "Undo" (scoped to today, so it can
+// never reach back and delete a prior day's session — see issue #43) and for
+// reviewing a past day's log and pulling out an entry.
 export function removeSessionOn(completions, exerciseId, date) {
   const id = String(exerciseId);
   const history = completions[id] || [];

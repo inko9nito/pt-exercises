@@ -4,7 +4,7 @@ import AllExercises from './components/AllExercises.jsx';
 import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, RefreshIcon } from './components/Icons.jsx';
-import { loadCompletions, saveCompletions, markDone, markDoneOn, undoLast, removeSessionOn } from './utils/tracker.js';
+import { loadCompletions, saveCompletions, markDone, markDoneOn, removeSessionOn } from './utils/tracker.js';
 import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
 
 const TAB_TODAY = 'today';
@@ -101,9 +101,13 @@ export default function App() {
     });
   }, []);
 
+  // Undo only ever removes *today's* most recent session (never a past
+  // day's) — see issue #43: the exercise-detail undo button used to remove
+  // the globally-latest session via undoLast, which silently deleted a prior
+  // day's logged session for anything not yet done today.
   const handleUndo = useCallback((exerciseId) => {
     setCompletions((prev) => {
-      const next = undoLast(prev, exerciseId);
+      const next = removeSessionOn(prev, exerciseId, new Date());
       saveCompletions(next);
       pushCompletions(next);
       return next;
