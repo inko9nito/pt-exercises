@@ -15,6 +15,18 @@ export function normalizeCompletions(raw) {
   return normalized;
 }
 
+// Firebase's onValue can fire with an empty placeholder snapshot before its
+// *authoritative* payload arrives (most visible right after a hard reload,
+// which wipes the SDK's in-memory cache along with everything else) —
+// ".info/connected" flipping true only proves the socket is up, not that the
+// real payload has landed, so it can't be used to grant trust. Only a real,
+// non-empty snapshot is allowed to establish trust; once it has, later
+// legitimate empty snapshots (e.g. everything was undone) are trusted too —
+// trust only ever ratchets on, never back off.
+export function shouldTrustRemoteSnapshot(remote, alreadyTrusted) {
+  return alreadyTrusted || Object.keys(remote).length > 0;
+}
+
 export function loadCompletions() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

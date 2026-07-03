@@ -22,6 +22,13 @@ export function subscribeToCompletions(onChange) {
   });
 }
 
-export function pushCompletions(completions) {
-  return set(completionsRef, completions);
+// Writes only the one exercise's session history that actually changed,
+// instead of the whole completions tree — logging or undoing one exercise
+// used to re-upload every other exercise's full history too on every single
+// action. Firebase's onValue on the parent `completions` path still sees the
+// merged, up-to-date full tree regardless of which descendant path a write
+// lands on, so this doesn't change anything about how subscribeToCompletions
+// receives updates.
+export function pushExerciseCompletions(exerciseId, history) {
+  return set(ref(db, `completions/${exerciseId}`), history);
 }

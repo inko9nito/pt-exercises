@@ -15,6 +15,7 @@ import {
   groupDayCards,
   getSessionsOn,
   countSessionsOn,
+  shouldTrustRemoteSnapshot,
 } from './tracker.js';
 
 // Thursday, fixed so every "today"/"days ago" calculation below is
@@ -380,5 +381,29 @@ describe('history index cache correctness', () => {
     const completions = { '4': [daysAgoISO(5), daysAgoISO(3), daysAgoISO(1)] };
     // Last session 1 day ago, gap needed is 3 -> not yet due.
     expect(isScheduledOn(every3Days, completions, NOW)).toBe(false);
+  });
+});
+
+// Regression coverage for the Firebase empty-snapshot-before-authoritative-
+// payload race (#41 C4): onValue can deliver a placeholder empty snapshot
+// right after a hard reload, before the real payload has synced. Rejecting
+// it protects existing localStorage data from being stomped; once a real
+// (non-empty) snapshot has been seen, later legitimate empty snapshots (e.g.
+// every session was undone) must be trusted, not rejected forever.
+describe('shouldTrustRemoteSnapshot', () => {
+  it('rejects an empty snapshot before any real data has been seen', () => {
+    expect(shouldTrustRemoteSnapshot({}, false)).toBe(false);
+  });
+
+  it('accepts a non-empty snapshot even before trust was established, and that establishes trust', () => {
+    expect(shouldTrustRemoteSnapshot({ '1': [daysAgoISO(0)] }, false)).toBe(true);
+  });
+
+  it('accepts a later empty snapshot once trust has already been established', () => {
+    expect(shouldTrustRemoteSnapshot({}, true)).toBe(true);
+  });
+
+  it('accepts a non-empty snapshot once trust has already been established', () => {
+    expect(shouldTrustRemoteSnapshot({ '1': [daysAgoISO(0)] }, true)).toBe(true);
   });
 });

@@ -4,8 +4,15 @@ import AllExercises from './components/AllExercises.jsx';
 import ProgressView from './components/ProgressView.jsx';
 import ExerciseDetail from './components/ExerciseDetail.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, RefreshIcon } from './components/Icons.jsx';
-import { loadCompletions, saveCompletions, markDone, markDoneOn, removeSessionOn } from './utils/tracker.js';
-import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
+import {
+  loadCompletions,
+  saveCompletions,
+  markDone,
+  markDoneOn,
+  removeSessionOn,
+  shouldTrustRemoteSnapshot,
+} from './utils/tracker.js';
+import { subscribeToCompletions, pushExerciseCompletions } from './utils/sync.js';
 import { useTodayModel } from './utils/useTodayModel.js';
 
 const TAB_TODAY = 'today';
@@ -61,15 +68,8 @@ export default function App() {
   const [logDate, setLogDate] = useState(null);
   const [detailClosing, setDetailClosing] = useState(false);
   const closeTimerRef = useRef(null);
-  // Firebase's onValue can fire with an empty placeholder snapshot before
-  // its *authoritative* payload arrives (most visible right after a hard
-  // reload, which wipes the SDK's in-memory cache along with everything
-  // else). ".info/connected" flipping true only proves the socket is up —
-  // it doesn't prove the completions listener's real payload has landed
-  // yet, so it can't be used to grant trust (that race is exactly what let
-  // an empty snapshot stomp good localStorage data even after this guard
-  // was first added). Only real, non-empty data is allowed to establish
-  // trust; once it has, later legitimate empty states are trusted too.
+  // See shouldTrustRemoteSnapshot's comment (tracker.js) for why an empty
+  // snapshot can't always be trusted at face value.
   const trustedRemoteRef = useRef(false);
 
   // Firebase is the source of truth; localStorage is just a fast local
@@ -77,9 +77,8 @@ export default function App() {
   // subscription connects (and still works if briefly offline).
   useEffect(() => {
     const unsubData = subscribeToCompletions((remote) => {
-      const remoteIsEmpty = Object.keys(remote).length === 0;
-      if (remoteIsEmpty && !trustedRemoteRef.current) return;
-      if (!remoteIsEmpty) trustedRemoteRef.current = true;
+      if (!shouldTrustRemoteSnapshot(remote, trustedRemoteRef.current)) return;
+      trustedRemoteRef.current = true;
       setCompletions(remote);
       saveCompletions(remote);
     });
@@ -92,7 +91,7 @@ export default function App() {
     setCompletions((prev) => {
       const next = markDone(prev, exerciseId);
       saveCompletions(next);
-      pushCompletions(next);
+      pushExerciseCompletions(exerciseId, next[String(exerciseId)]);
       return next;
     });
   }, []);
@@ -102,7 +101,7 @@ export default function App() {
     setCompletions((prev) => {
       const next = markDoneOn(prev, exerciseId, date);
       saveCompletions(next);
-      pushCompletions(next);
+      pushExerciseCompletions(exerciseId, next[String(exerciseId)]);
       return next;
     });
   }, []);
@@ -114,8 +113,9 @@ export default function App() {
   const handleUndo = useCallback((exerciseId) => {
     setCompletions((prev) => {
       const next = removeSessionOn(prev, exerciseId, new Date());
+      if (next === prev) return prev; // nothing to undo
       saveCompletions(next);
-      pushCompletions(next);
+      pushExerciseCompletions(exerciseId, next[String(exerciseId)]);
       return next;
     });
   }, []);
@@ -123,8 +123,9 @@ export default function App() {
   const handleRemoveFromLog = useCallback((exerciseId, date) => {
     setCompletions((prev) => {
       const next = removeSessionOn(prev, exerciseId, date);
+      if (next === prev) return prev; // nothing on that day to remove
       saveCompletions(next);
-      pushCompletions(next);
+      pushExerciseCompletions(exerciseId, next[String(exerciseId)]);
       return next;
     });
   }, []);
