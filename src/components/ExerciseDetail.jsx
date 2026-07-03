@@ -29,7 +29,6 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
 
   const isMultipleDaily = exercise.freqType === FREQ.MULTIPLE_DAILY;
   const isHourly = exercise.freqType === FREQ.HOURLY;
-  const isAsNeeded = exercise.freqType === FREQ.AS_NEEDED;
   const maxPerDay = exercise.maxPerDay || 99;
   // Both belly-lift-style (maxPerDay) and hourly (dailyTarget) exercises are
   // "log N sessions today" — treat them the same so the counter, the today's

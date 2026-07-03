@@ -18,6 +18,15 @@ export default function ImageCarousel({ images, alt }) {
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const timerRef = useRef(null);
+  // Axis-locked gesture: a horizontal drag slides the track with the finger
+  // and snaps to a slide on release (never scrolling the page); a vertical
+  // drag is forwarded to the detail scroll container so the page still
+  // scrolls. touch-action is none on the carousel so the browser can't steal
+  // the vertical part of a diagonal swipe.
+  // Declared above the `images` early-return below so every hook in this
+  // component runs unconditionally on every render (Rules of Hooks).
+  const gesture = useRef(null);
+  const dragged = useRef(false);
 
   const hasAnimation = images && images.length > 1;
   const slideCount = images ? images.length + (hasAnimation ? 1 : 0) : 0;
@@ -36,14 +45,6 @@ export default function ImageCarousel({ images, alt }) {
   const goTo = (i) => setIdx(Math.max(0, Math.min(slideCount - 1, i)));
   const prev = (e) => { e.stopPropagation(); goTo(idx - 1); };
   const next = (e) => { e.stopPropagation(); goTo(idx + 1); };
-
-  // Axis-locked gesture: a horizontal drag slides the track with the finger
-  // and snaps to a slide on release (never scrolling the page); a vertical
-  // drag is forwarded to the detail scroll container so the page still
-  // scrolls. touch-action is none on the carousel so the browser can't steal
-  // the vertical part of a diagonal swipe.
-  const gesture = useRef(null);
-  const dragged = useRef(false);
 
   const onPointerDown = (e) => {
     gesture.current = {

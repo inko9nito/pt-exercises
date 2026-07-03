@@ -22,18 +22,18 @@ export default function Lightbox({ images, initialIndex, alt, onClose }) {
   const lastTap = useRef(0);
   const moved = useRef(false);
 
-  const apply = (nt) => {
+  const apply = useCallback((nt) => {
     tRef.current = nt;
     setT(nt);
-  };
-  const reset = () => apply({ scale: 1, x: 0, y: 0 });
+  }, []);
+  const reset = useCallback(() => apply({ scale: 1, x: 0, y: 0 }), [apply]);
 
   const goTo = useCallback(
     (i) => {
       setIdx(((i % images.length) + images.length) % images.length);
       reset();
     },
-    [images.length]
+    [images.length, reset]
   );
 
   const center = () => {
