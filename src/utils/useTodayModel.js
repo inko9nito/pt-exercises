@@ -5,7 +5,6 @@ import {
   isDueToday,
   isOptionalToday,
   isRelevantToday,
-  isToday,
   getNextDueEstimate,
   getPlanProgress,
   getCompletionDateMap,
@@ -35,10 +34,9 @@ export function useTodayModel(completions) {
     const relevantIds = new Set();
 
     for (const ex of exercises) {
-      const hist = completions[String(ex.id)] || [];
       const todayCount = getTodayCount(ex, completions);
       const dueToday = isDueToday(ex, completions);
-      const doneToday = hist.some(isToday);
+      const doneToday = todayCount > 0;
 
       if (ex.freqType === FREQ.AS_NEEDED) {
         // Never a real obligation — always available, never required.

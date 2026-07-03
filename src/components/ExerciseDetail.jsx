@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import ImageCarousel from './ImageCarousel.jsx';
 import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon, CheckBadgeIcon, TrashIcon } from './Icons.jsx';
 import { FREQ, exercises } from '../data/exercises.js';
-import { isToday, isOptionalToday, isDueToday, getNextDueEstimate, countSessionsOn } from '../utils/tracker.js';
+import { isOptionalToday, isDueToday, getNextDueEstimate, getSessionsOn, countSessionsOn } from '../utils/tracker.js';
 import { formatLastDone } from '../utils/format.js';
 import { assetUrl } from '../utils/asset.js';
 
@@ -13,7 +13,7 @@ function pluralize(value, singular, plural) {
 export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onRemoveFromLog, onClose, onNext, logDate, closing }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
-  const todaySessions = history.filter(isToday);
+  const todaySessions = getSessionsOn(completions, exercise.id, new Date());
   const todayCount = todaySessions.length;
   const lastDoneDate = history.length > 0 ? new Date(history[history.length - 1]) : null;
 

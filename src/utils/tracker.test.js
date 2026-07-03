@@ -13,6 +13,8 @@ import {
   getStreak,
   getCompletionDateMap,
   groupDayCards,
+  getSessionsOn,
+  countSessionsOn,
 } from './tracker.js';
 
 // Thursday, fixed so every "today"/"days ago" calculation below is
@@ -323,5 +325,60 @@ describe('groupDayCards', () => {
   it('returns an empty array for a day with no sessions', () => {
     const dateMap = getCompletionDateMap({}, []);
     expect(groupDayCards(dateMap, '2026-07-02')).toEqual([]);
+  });
+});
+
+describe('getSessionsOn / countSessionsOn', () => {
+  it('returns every session on the given day, in chronological order', () => {
+    const first = new Date('2026-07-02T08:00:00').toISOString();
+    const second = new Date('2026-07-02T14:00:00').toISOString();
+    const completions = { '18': [daysAgoISO(1), first, second] };
+    expect(getSessionsOn(completions, 18, NOW)).toEqual([first, second]);
+    expect(countSessionsOn(completions, 18, NOW)).toBe(2);
+  });
+
+  it('returns an empty array/zero for a day with nothing logged', () => {
+    expect(getSessionsOn({}, 18, NOW)).toEqual([]);
+    expect(countSessionsOn({ '18': [daysAgoISO(5)] }, 18, NOW)).toBe(0);
+  });
+});
+
+// Regression coverage for the history-index cache (B1/#41 PR4): the cache is
+// keyed on the history *array reference*, since a completions update only
+// replaces the edited exercise's array — every other exercise keeps its old
+// reference (and cached index). These tests exercise both halves of that:
+// an untouched exercise must still read correctly after a sibling changes,
+// and an edited exercise's own cache must never return stale data.
+describe('history index cache correctness', () => {
+  it('reading one exercise is unaffected by a completions update to another', () => {
+    const everyOtherDay = { id: 1, freqType: FREQ.EVERY_OTHER_DAY, freqDays: 2 };
+    let completions = { '1': [daysAgoISO(2)], '2': [daysAgoISO(0)] };
+    expect(isDueToday(everyOtherDay, completions)).toBe(true);
+
+    // Simulate marking exercise 2 done again today — a real completions
+    // update replaces only exercise 2's array; exercise 1's array reference
+    // is untouched.
+    completions = { ...completions, '2': [...completions['2'], daysAgoISO(0)] };
+    expect(isDueToday(everyOtherDay, completions)).toBe(true);
+  });
+
+  it('reflects a new session on the same exercise once its array reference changes', () => {
+    const everyOtherDay = { id: 3, freqType: FREQ.EVERY_OTHER_DAY, freqDays: 2 };
+    let completions = { '3': [daysAgoISO(2)] };
+    expect(isDueToday(everyOtherDay, completions)).toBe(true);
+
+    // A fresh array reference for exercise 3, with today's session added —
+    // must not read a stale cached index from the old array.
+    completions = { '3': [...completions['3'], daysAgoISO(0)] };
+    expect(isDueToday(everyOtherDay, completions)).toBe(false);
+  });
+
+  it('isScheduledOn finds the right prior session across multiple logged days', () => {
+    const every3Days = { id: 4, freqType: FREQ.EVERY_3_DAYS, freqDays: 3 };
+    // Logged on three different days; "last session before today" must be
+    // the most recent of these (1 day ago), not the earliest.
+    const completions = { '4': [daysAgoISO(5), daysAgoISO(3), daysAgoISO(1)] };
+    // Last session 1 day ago, gap needed is 3 -> not yet due.
+    expect(isScheduledOn(every3Days, completions, NOW)).toBe(false);
   });
 });

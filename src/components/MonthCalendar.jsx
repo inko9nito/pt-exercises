@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons.jsx';
 import { dateKey, mondayIndex, WEEKDAY_LABELS } from '../utils/tracker.js';
 
@@ -12,6 +13,29 @@ function getMonthCells(year, month) {
   while (cells.length % 7 !== 0) cells.push(null);
   return cells;
 }
+
+// Split out and memoized on primitives (not the `dateMap` object, which gets
+// a new reference on every completions change even when most days' activity
+// is unaffected) so logging a session only re-renders the day(s) whose own
+// activity/selection actually changed, not all ~42 cells.
+function CalendarCell({ dateKeyValue, dayNumber, hasActivity, isToday, isSelected, isFuture, onSelect }) {
+  const classes = ['calendar-cell'];
+  if (hasActivity) classes.push('has-activity');
+  if (isToday) classes.push('is-today');
+  if (isSelected) classes.push('is-selected');
+
+  return (
+    <button
+      className={classes.join(' ')}
+      disabled={isFuture}
+      onClick={() => onSelect(isSelected ? null : dateKeyValue)}
+    >
+      {dayNumber}
+    </button>
+  );
+}
+
+const MemoCalendarCell = memo(CalendarCell);
 
 export default function MonthCalendar({ monthOffset, onMonthChange, dateMap, selectedDate, onSelectDate }) {
   const base = new Date();
@@ -58,25 +82,18 @@ export default function MonthCalendar({ monthOffset, onMonthChange, dateMap, sel
           if (!date) return <span key={i} className="calendar-cell empty" />;
 
           const key = dateKey(date);
-          const hasActivity = dateMap.has(key);
-          const isCellToday = key === todayKey;
-          const isSelected = key === selectedDate;
-          const isFuture = date > today;
-
-          const classes = ['calendar-cell'];
-          if (hasActivity) classes.push('has-activity');
-          if (isCellToday) classes.push('is-today');
-          if (isSelected) classes.push('is-selected');
 
           return (
-            <button
+            <MemoCalendarCell
               key={i}
-              className={classes.join(' ')}
-              disabled={isFuture}
-              onClick={() => onSelectDate(isSelected ? null : key)}
-            >
-              {date.getDate()}
-            </button>
+              dateKeyValue={key}
+              dayNumber={date.getDate()}
+              hasActivity={dateMap.has(key)}
+              isToday={key === todayKey}
+              isSelected={key === selectedDate}
+              isFuture={date > today}
+              onSelect={onSelectDate}
+            />
           );
         })}
       </div>

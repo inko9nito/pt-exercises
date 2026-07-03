@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { CheckBadgeIcon, ChevronRightIcon, StarIcon } from './Icons.jsx';
 import { exerciseById } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
@@ -5,8 +6,11 @@ import { isScheduledOn } from '../utils/tracker.js';
 
 // Shared "what happened on this day" card list, used by both the week
 // strip's past-day view (DailyView) and the Progress calendar's day-detail
-// (ProgressView) so the two never drift apart.
-export default function DayLogList({ cards, date, completions, onOpenExercise, emptyMessage }) {
+// (ProgressView) so the two never drift apart. `cards`/`date` are only ever
+// new references when the selected day (or its data) actually changes — see
+// the groupDayCards useMemo in each caller — so the default shallow prop
+// comparison is enough to skip re-rendering on unrelated parent re-renders.
+function DayLogList({ cards, date, completions, onOpenExercise, emptyMessage }) {
   if (cards.length === 0) {
     return <p className="day-detail-empty">{emptyMessage}</p>;
   }
@@ -51,3 +55,5 @@ export default function DayLogList({ cards, date, completions, onOpenExercise, e
     </div>
   );
 }
+
+export default memo(DayLogList);

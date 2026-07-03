@@ -67,8 +67,7 @@ export function removeSessionOn(completions, exerciseId, date) {
 }
 
 export function countSessionsOn(completions, exerciseId, date) {
-  const key = dateKey(date);
-  return (completions[String(exerciseId)] || []).filter((iso) => dateKey(new Date(iso)) === key).length;
+  return getSessionsOn(completions, exerciseId, date).length;
 }
 
 export function daysBetween(date1, date2) {
@@ -98,6 +97,63 @@ export function isToday(isoString) {
   return dateKey(new Date(isoString)) === dateKey(new Date());
 }
 
+// Every predicate below needs some version of "which sessions fall on day X"
+// or "what's the most recent session before day X", and a naive
+// implementation re-parses every ISO string in a history on every call —
+// cheap for one exercise once, expensive across 20 exercises × several
+// predicates × every render. This index is built once per history array and
+// cached by array *reference*: completions updates only replace the edited
+// exercise's array (`{ ...completions, [id]: next }`), so every other
+// exercise's array reference — and its cached index — survives untouched.
+const historyIndexCache = new WeakMap();
+
+function getHistoryIndex(history) {
+  let index = historyIndexCache.get(history);
+  if (index) return index;
+
+  const byDay = new Map();
+  // history is kept chronologically sorted (see markDone/markDoneOn), so a
+  // single pass both buckets sessions by day and keeps each day's bucket in
+  // chronological order.
+  for (const iso of history) {
+    const key = dateKey(new Date(iso));
+    if (!byDay.has(key)) byDay.set(key, []);
+    byDay.get(key).push(iso);
+  }
+  const dayKeys = Array.from(byDay.keys()).sort();
+  index = { byDay, dayKeys };
+  historyIndexCache.set(history, index);
+  return index;
+}
+
+// The most recent session strictly before `date`, or null if there isn't
+// one — a binary search over the (typically much shorter) list of distinct
+// days-with-a-session, instead of filtering every individual session.
+function lastSessionBefore(history, date) {
+  const { byDay, dayKeys } = getHistoryIndex(history);
+  const key = dateKey(date);
+  let lo = 0;
+  let hi = dayKeys.length - 1;
+  let found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (dayKeys[mid] < key) {
+      found = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  if (found === -1) return null;
+  const sessions = byDay.get(dayKeys[found]);
+  return sessions[sessions.length - 1];
+}
+
+export function getSessionsOn(completions, exerciseId, date) {
+  const history = completions[String(exerciseId)] || [];
+  return getHistoryIndex(history).byDay.get(dateKey(date)) || [];
+}
+
 export function isDueToday(exercise, completions) {
   const id = String(exercise.id);
   const history = completions[id] || [];
@@ -106,7 +162,7 @@ export function isDueToday(exercise, completions) {
   switch (exercise.freqType) {
     case FREQ.DAILY:
     case FREQ.DAILY_OR_EOD: {
-      return !history.some(isToday);
+      return getSessionsOn(completions, exercise.id, today).length === 0;
     }
 
     case FREQ.EVERY_OTHER_DAY:
@@ -118,13 +174,13 @@ export function isDueToday(exercise, completions) {
     }
 
     case FREQ.MULTIPLE_DAILY: {
-      const todayCount = history.filter(isToday).length;
+      const todayCount = getTodayCount(exercise, completions);
       return todayCount < (exercise.maxPerDay || 3);
     }
 
     case FREQ.HOURLY: {
       if (exercise.dailyTarget) {
-        const todayCount = history.filter(isToday).length;
+        const todayCount = getTodayCount(exercise, completions);
         if (todayCount >= exercise.dailyTarget) return false;
       }
       if (history.length === 0) return true;
@@ -147,7 +203,7 @@ export function isOptionalToday(exercise, completions) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   if (history.length === 0) return false;
-  if (history.some(isToday)) return false;
+  if (getSessionsOn(completions, exercise.id, new Date()).length > 0) return false;
   const last = history[history.length - 1];
   return daysBetween(last, new Date()) === 1;
 }
@@ -159,7 +215,7 @@ export function getNextDueEstimate(exercise, completions) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   if (history.length === 0) return null;
-  if (exercise.dailyTarget && history.filter(isToday).length >= exercise.dailyTarget) return null;
+  if (exercise.dailyTarget && getTodayCount(exercise, completions) >= exercise.dailyTarget) return null;
   const last = new Date(history[history.length - 1]);
   const next = new Date(last.getTime() + (exercise.freqMinutes || 90) * 60000);
   if (next <= new Date()) return null;
@@ -175,8 +231,7 @@ export function getNextDueEstimate(exercise, completions) {
 export function isRelevantToday(exercise, completions) {
   if (exercise.freqType === FREQ.AS_NEEDED || exercise.freqType === FREQ.MULTIPLE_DAILY) return true;
   if (isDueToday(exercise, completions)) return true;
-  const hist = completions[String(exercise.id)] || [];
-  return hist.some(isToday);
+  return getTodayCount(exercise, completions) > 0;
 }
 
 // Whether an exercise is part of today's *prescribed plan* — independent of
@@ -188,14 +243,8 @@ export function isRelevantToday(exercise, completions) {
 // that day's plan — so scheduling is computed only from sessions on *other*
 // days, which also lets it be reconstructed for any past day (the week
 // strip's per-day rings) purely from history.
-function sessionsBefore(history, date) {
-  const key = dateKey(date);
-  return history.filter((iso) => dateKey(new Date(iso)) < key);
-}
-
 function doneOn(history, date) {
-  const key = dateKey(date);
-  return history.some((iso) => dateKey(new Date(iso)) === key);
+  return getHistoryIndex(history).byDay.has(dateKey(date));
 }
 
 export function isScheduledOn(exercise, completions, date) {
@@ -223,9 +272,8 @@ export function isScheduledOn(exercise, completions, date) {
     case FREQ.TWICE_WEEKLY: {
       // Due on this day if the last session *before* it is at least the
       // cadence gap back (or there was none yet).
-      const prior = sessionsBefore(history, date);
-      if (prior.length === 0) return true;
-      const last = prior[prior.length - 1];
+      const last = lastSessionBefore(history, date);
+      if (last === null) return true;
       return daysBetween(last, date) >= exercise.freqDays;
     }
 
@@ -287,7 +335,10 @@ export function getDaysOverdue(exercise, completions) {
   const history = completions[String(exercise.id)] || [];
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
-  if (!history.some((iso) => new Date(iso) < startOfToday)) return 0;
+  // dayKeys is sorted ascending, so the earliest day-with-a-session is
+  // dayKeys[0] — an O(1) check instead of scanning every session.
+  const { dayKeys } = getHistoryIndex(history);
+  if (dayKeys.length === 0 || dayKeys[0] >= dateKey(startOfToday)) return 0;
 
   let count = 0;
   const cursor = new Date();
@@ -303,9 +354,7 @@ export function getDaysOverdue(exercise, completions) {
 }
 
 export function getTodayCount(exercise, completions) {
-  const id = String(exercise.id);
-  const history = completions[id] || [];
-  return history.filter(isToday).length;
+  return getSessionsOn(completions, exercise.id, new Date()).length;
 }
 
 export function getLastDone(exercise, completions) {

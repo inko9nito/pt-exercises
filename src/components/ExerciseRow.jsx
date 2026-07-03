@@ -1,12 +1,13 @@
+import { memo } from 'react';
 import { ChevronRightIcon, CheckBadgeIcon, StarIcon, ClockIcon } from './Icons.jsx';
 import { FREQ } from '../data/exercises.js';
-import { isToday, isOptionalToday, isDueToday, getNextDueEstimate } from '../utils/tracker.js';
+import { isOptionalToday, isDueToday, getNextDueEstimate, getTodayCount } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
 
-export default function ExerciseRow({ exercise, completions, onOpen, extra = false, overdueDays = 0, optional: forceOptional = false }) {
+function ExerciseRow({ exercise, completions, onOpen, extra = false, overdueDays = 0, optional: forceOptional = false }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
-  const todayCount = history.filter(isToday).length;
+  const todayCount = getTodayCount(exercise, completions);
   const isMultipleDaily = exercise.freqType === FREQ.MULTIPLE_DAILY;
   const isOpenEnded = exercise.freqType === FREQ.HOURLY || exercise.freqType === FREQ.AS_NEEDED;
   const maxPerDay = exercise.maxPerDay || 99;
@@ -84,3 +85,23 @@ export default function ExerciseRow({ exercise, completions, onOpen, extra = fal
     </button>
   );
 }
+
+// `completions` (the whole object) changes on every logged/undone session
+// regardless of which exercise it was, so comparing it directly would defeat
+// memoization for every row whenever any one of them changes. Only this
+// row's own exercise's history array actually determines what it renders —
+// and a completions update replaces just the edited exercise's array, so
+// every unrelated row's history reference (and this comparison) stays
+// stable across it.
+function areRowPropsEqual(prev, next) {
+  return (
+    prev.exercise === next.exercise &&
+    prev.onOpen === next.onOpen &&
+    prev.extra === next.extra &&
+    prev.overdueDays === next.overdueDays &&
+    prev.optional === next.optional &&
+    prev.completions[String(prev.exercise.id)] === next.completions[String(next.exercise.id)]
+  );
+}
+
+export default memo(ExerciseRow, areRowPropsEqual);
