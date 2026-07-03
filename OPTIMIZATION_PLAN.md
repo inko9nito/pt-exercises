@@ -197,13 +197,14 @@ D1 doesn't already absorb it.
 
 ## Workstream E — Correctness cleanups surfaced while reviewing
 
-**Status: deferred.** E1–E3 below (and the PR6 slot that held them) are
-intentionally **not** part of the active PR sequence — E1 is already tracked
-directly on issue #40 and isn't urgent, and E2/E3 are minor, non-urgent
-polish bundled alongside it. Left documented here for whenever #40 gets
-picked up on its own; nothing further to do for them as part of this cleanup
-effort. E4 is the exception — it was real data loss and has already shipped
-(merged via #44, ahead of the rest of this plan).
+**Status: deferred, each with its own standalone issue.** E1–E3 (and the PR6
+slot that held them) are intentionally **not** part of the active PR
+sequence — not urgent, but each now has its own issue precisely so the
+detail doesn't vanish once #41 is closed (a plan-doc-only note would die with
+the tracking issue; a standalone issue survives independently, same as #40
+already did). Pick any of them up on their own schedule, unrelated to this
+PR chain. E4 is the exception — it was real data loss and has already
+shipped (merged via #44, ahead of the rest of this plan).
 
 - **E1. Issue #40 (open, deferred): as-needed breaks "All caught up."** Because
   "General neck massage" is `AS_NEEDED`, `DailyView` always pushes it into
@@ -213,16 +214,17 @@ effort. E4 is the exception — it was real data loss and has already shipped
   and encode it — this is a behavior change the issue explicitly wants. Track
   and fix this directly against #40 whenever it's picked up; no dedicated PR in
   this sequence.
-- **E2. `ExerciseCarousel`/`Lightbox` axis-lock vs `useSwipe`. (deferred)**
+- **E2. Issue #51 (open, deferred): `ImageCarousel` axis-lock vs `useSwipe`.**
   `ImageCarousel` hand-rolls its own axis-locked pointer gesture while
   `useSwipe` exists for `WeekStrip`. They're intentionally different (one drags
   a track, one is a threshold swipe) — **don't force a merge**, but document
   why, or extract the shared axis-lock primitive if it stays readable. Minor;
   not worth its own PR right now.
-- **E3. `nextExercise = id + 1` coupling. (deferred)** `ExerciseDetail`
-  computes "Up next" as `exercise.id + 1`, assuming contiguous integer ids.
-  Fine today; make it index-based against the `exercises` array so it can't
-  silently break if an id is ever removed. Minor robustness note, not urgent.
+- **E3. Issue #52 (open, deferred): `nextExercise = id + 1` coupling.**
+  `ExerciseDetail` computes "Up next" as `exercise.id + 1`, assuming
+  contiguous integer ids. Fine today; make it index-based against the
+  `exercises` array so it can't silently break if an id is ever removed.
+  Minor robustness note, not urgent.
 - **E4. Issue #43 (done — merged via #44): undo can silently delete a past day's session.**
   `ExerciseDetail` renders its undo button whenever `history.length > 0` — even
   when nothing has been logged *today* — and `undoLast` removes the *globally
@@ -245,10 +247,11 @@ tracked work (listed so the implementer doesn't scope-creep into them):
 #3 (notes field), #13 (Today rollover logic), #18 (theme/colors), #24 (timer),
 #25 (landscape/iPad responsiveness), #27 (postpone/reschedule), #35 (refresh
 transition), #37 ("log another" sheet transition). **#43** was in scope and is
-done. **#33** is in scope (PR2). **#40** is explicitly deferred — see
-Workstream E — and tracked on its own issue rather than as a PR in this
-sequence. Issue #49 (repo-wide Prettier reformat) is also deferred/skipped for
-now, not urgent.
+done. **#33** is in scope (PR2). **#40**, **#51**, and **#52** are explicitly
+deferred — see Workstream E — each tracked on its own standalone issue rather
+than as a PR in this sequence, so none of them get lost when #41 closes.
+Issue #49 (repo-wide Prettier reformat) is also deferred, not urgent, but
+stays open — not to be closed until it's actually done.
 
 ---
 
@@ -268,13 +271,14 @@ now, not urgent.
 5. **PR5 — Sync:** scoped Firebase writes + simplify trust guard. (B6, C4)
 
 **PR6 is skipped.** It would have covered #40 ("All caught up") plus the minor
-E2/E3 polish — deferred as not urgent; see Workstream E. #40 stays open as its
-own issue and can be picked up directly, independent of this PR sequence,
-whenever it's prioritized.
+E2/E3 polish — deferred as not urgent; see Workstream E. #40, #51, and #52
+each stay open as their own standalone issues and can be picked up directly,
+independent of this PR sequence, whenever prioritized.
 
 The active sequence for this cleanup effort now ends at **PR5**. Issue #49
-(repo-wide Prettier reformat) is likewise deferred/skipped — not urgent, and
-was already scoped to come after this sequence anyway.
+(repo-wide Prettier reformat) is likewise deferred — not urgent, and was
+already scoped to come after this sequence anyway — but stays open, not
+closed, until it's actually done.
 
 Each PR should keep `npm test` green; PRs 3–5 must not change any test
 assertions (pure refactors).
