@@ -1,16 +1,13 @@
 import { exercises } from '../data/exercises.js';
-import { dateKey, getPlanProgressOn } from '../utils/tracker.js';
+import { dateKey, getPlanProgressOn, mondayIndex, WEEKDAY_LABELS } from '../utils/tracker.js';
 import { useSwipe } from '../utils/useSwipe.js';
 import { CheckIcon, StarIcon } from './Icons.jsx';
 
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
 function getWeekDates(weekOffset) {
   const today = new Date();
-  const mondayIndex = (today.getDay() + 6) % 7; // Monday-start index
   const monday = new Date(today);
   monday.setHours(0, 0, 0, 0);
-  monday.setDate(today.getDate() - mondayIndex + weekOffset * 7);
+  monday.setDate(today.getDate() - mondayIndex(today) + weekOffset * 7);
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);

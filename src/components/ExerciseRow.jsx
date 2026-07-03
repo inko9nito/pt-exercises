@@ -1,5 +1,5 @@
 import { ChevronRightIcon, CheckBadgeIcon, StarIcon, ClockIcon } from './Icons.jsx';
-import { LOCATION_LABEL, FREQ } from '../data/exercises.js';
+import { FREQ } from '../data/exercises.js';
 import { isToday, isOptionalToday, isDueToday, getNextDueEstimate } from '../utils/tracker.js';
 import { assetUrl } from '../utils/asset.js';
 
@@ -43,8 +43,6 @@ export default function ExerciseRow({ exercise, completions, onOpen, extra = fal
           ) : (
             exercise.freqLabel
           )}
-          {' · '}
-          {LOCATION_LABEL[exercise.location]}
         </span>
         {overdueDays > 0 && (
           <span className="row-overdue-badge">

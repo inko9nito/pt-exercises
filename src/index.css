@@ -707,10 +707,6 @@ button {
   gap: 5px;
 }
 
-.detail-meta-dot {
-  color: var(--ink-3);
-}
-
 .optional-badge {
   display: inline-block;
   font-size: var(--text-xs);

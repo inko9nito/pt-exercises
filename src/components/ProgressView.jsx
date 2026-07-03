@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import ProgressRing from './ProgressRing.jsx';
 import MonthCalendar from './MonthCalendar.jsx';
 import { CheckCircleIcon, CheckBadgeIcon, ChevronRightIcon, FlameIcon, StarIcon } from './Icons.jsx';
-import { exercises } from '../data/exercises.js';
+import { exercises, exerciseById } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
+import { formatDateLong } from '../utils/format.js';
 import {
   getTotalSessions,
   getStreak,
@@ -12,17 +13,6 @@ import {
   getPlanProgressOn,
   isScheduledOn,
 } from '../utils/tracker.js';
-
-const exerciseById = new Map(exercises.map((ex) => [ex.id, ex]));
-
-function formatDateLong(key) {
-  const date = new Date(`${key}T00:00:00`);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-}
 
 export default function ProgressView({ completions, onOpenExercise }) {
   const [monthOffset, setMonthOffset] = useState(0);

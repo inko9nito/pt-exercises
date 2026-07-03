@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import ImageCarousel from './ImageCarousel.jsx';
 import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, WrenchIcon, UndoIcon, CheckIcon, CheckBadgeIcon, TrashIcon } from './Icons.jsx';
-import { LOCATION_LABEL, FREQ, exercises } from '../data/exercises.js';
-import { isToday, isOptionalToday, isDueToday, getNextDueEstimate, formatLastDone, countSessionsOn } from '../utils/tracker.js';
+import { FREQ, exercises } from '../data/exercises.js';
+import { isToday, isOptionalToday, isDueToday, getNextDueEstimate, countSessionsOn } from '../utils/tracker.js';
+import { formatLastDone } from '../utils/format.js';
 import { assetUrl } from '../utils/asset.js';
 
 function pluralize(value, singular, plural) {
@@ -77,8 +78,6 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
               <ClockIcon size={14} />
               {exercise.freqLabel}
             </span>
-            <span className="detail-meta-dot">·</span>
-            <span className="detail-meta-item">{LOCATION_LABEL[exercise.location]}</span>
           </div>
 
           {optional && <span className="optional-badge">Optional today — already done yesterday</span>}

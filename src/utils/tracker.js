@@ -86,6 +86,14 @@ export function dateKey(date) {
   return `${y}-${m}-${d}`;
 }
 
+export const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// Date.getDay() is Sunday-start (0 = Sunday); every calendar view in this app
+// (week strip, month calendar) starts the week on Monday instead.
+export function mondayIndex(date) {
+  return (date.getDay() + 6) % 7;
+}
+
 export function isToday(isoString) {
   return dateKey(new Date(isoString)) === dateKey(new Date());
 }
@@ -305,22 +313,6 @@ export function getLastDone(exercise, completions) {
   const history = completions[id] || [];
   if (history.length === 0) return null;
   return new Date(history[history.length - 1]);
-}
-
-export function formatLastDone(date) {
-  if (!date) return 'Never';
-  if (isToday(date.toISOString())) {
-    return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  }
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (
-    date.getDate() === yesterday.getDate() &&
-    date.getMonth() === yesterday.getMonth()
-  ) {
-    return 'Yesterday';
-  }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 export function getTotalSessions(completions) {

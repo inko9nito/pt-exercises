@@ -3,8 +3,9 @@ import ExerciseRow from './ExerciseRow.jsx';
 import WeekStrip from './WeekStrip.jsx';
 import AddExerciseSheet from './AddExerciseSheet.jsx';
 import { CheckBadgeIcon, CheckIcon, ChevronRightIcon, PlusIcon, StarIcon } from './Icons.jsx';
-import { exercises, FREQ } from '../data/exercises.js';
+import { exercises, FREQ, exerciseById } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
+import { formatDateLong } from '../utils/format.js';
 import {
   getDaysOverdue,
   getNextDueEstimate,
@@ -19,17 +20,6 @@ import {
   dateKey,
   getCompletionDateMap,
 } from '../utils/tracker.js';
-
-const exerciseById = new Map(exercises.map((ex) => [ex.id, ex]));
-
-function formatDateLong(key) {
-  const date = new Date(`${key}T00:00:00`);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-}
 
 export default function DailyView({ completions, onOpenExercise, onLogForDate }) {
   const today = new Date();

@@ -1,12 +1,10 @@
 import { useState, useMemo } from 'react';
 import ExerciseRow from './ExerciseRow.jsx';
-import { SearchIcon, HomeIcon, TreeIcon, WrenchIcon } from './Icons.jsx';
-import { exercises, LOCATION } from '../data/exercises.js';
+import { SearchIcon, WrenchIcon } from './Icons.jsx';
+import { exercises } from '../data/exercises.js';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
-  { key: 'indoor', label: 'Indoors', icon: <HomeIcon size={12} /> },
-  { key: 'outdoor', label: 'Outdoors', icon: <TreeIcon size={12} /> },
   { key: 'equipment', label: 'Needs gear', icon: <WrenchIcon size={12} /> },
   { key: 'no-equipment', label: 'No gear' },
 ];
@@ -25,8 +23,6 @@ export default function AllExercises({ completions, onOpenExercise }) {
 
       const matchFilter =
         filter === 'all' ||
-        (filter === 'indoor' && ex.location === LOCATION.INDOOR) ||
-        (filter === 'outdoor' && ex.location === LOCATION.OUTDOOR) ||
         (filter === 'equipment' && ex.equipment.length > 0) ||
         (filter === 'no-equipment' && ex.equipment.length === 0);
 

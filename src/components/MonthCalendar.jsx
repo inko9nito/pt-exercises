@@ -1,11 +1,9 @@
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons.jsx';
-import { dateKey } from '../utils/tracker.js';
-
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+import { dateKey, mondayIndex, WEEKDAY_LABELS } from '../utils/tracker.js';
 
 function getMonthCells(year, month) {
   const firstOfMonth = new Date(year, month, 1);
-  const startOffset = (firstOfMonth.getDay() + 6) % 7; // Monday-start index
+  const startOffset = mondayIndex(firstOfMonth);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const cells = [];
