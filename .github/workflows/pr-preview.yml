@@ -1,0 +1,115 @@
+name: PR Preview
+
+# Builds every PR's head commit and publishes it to a per-PR subpath on the
+# existing `gh-pages` branch (the same branch production is deployed to
+# manually), so a PR gets a real, shareable preview URL without touching the
+# production path at /pt-exercises/. The comment step keeps a single sticky
+# comment on the PR up to date across pushes instead of piling up a new one
+# each time.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with preview base path
+        # Overrides vite.config.js's production `base` for this build only,
+        # so the bundle's asset URLs resolve under the preview subpath
+        # instead of the production root.
+        run: npx vite build --base=/pt-exercises/pr-${{ github.event.pull_request.number }}/
+
+      - name: Publish preview to gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -e
+          git clone --branch gh-pages --depth 1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" gh-pages-deploy
+          rm -rf "gh-pages-deploy/pr-${PR}"
+          mkdir -p "gh-pages-deploy/pr-${PR}"
+          cp -r dist/. "gh-pages-deploy/pr-${PR}/"
+          cd gh-pages-deploy
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Preview PR #${PR} (${{ github.event.pull_request.head.sha }})" --allow-empty
+          git push origin HEAD:gh-pages
+
+      - name: Comment preview link on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const owner = context.repo.owner;
+            const url = `https://${owner}.github.io/pt-exercises/pr-${prNumber}/`;
+            const marker = '<!-- pr-preview-link -->';
+            const sha = context.payload.pull_request.head.sha.substring(0, 7);
+            const body = `${marker}\n🔍 **Preview deployed:** ${url}\n\nBuilt from \`${sha}\`. Updates automatically on new commits to this PR, and is removed when the PR closes.`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find((c) => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+  cleanup-preview:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Remove preview directory from gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -e
+          git clone --branch gh-pages --depth 1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" gh-pages-deploy
+          cd gh-pages-deploy
+          if [ -d "pr-${PR}" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            rm -rf "pr-${PR}"
+            git add -A
+            git commit -m "Remove preview for closed PR #${PR}"
+            git push origin HEAD:gh-pages
+          fi
