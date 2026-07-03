@@ -14,6 +14,7 @@ import {
 } from './utils/tracker.js';
 import { subscribeToCompletions, pushExerciseCompletions } from './utils/sync.js';
 import { useTodayModel } from './utils/useTodayModel.js';
+import { useWakeLock } from './utils/useWakeLock.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
@@ -60,6 +61,9 @@ export default function App() {
   // recomputes when `completions` actually changes, not on every navigation
   // back to a tab.
   const todayModel = useTodayModel(completions);
+  // Hold the screen awake while the app is open so the phone doesn't lock
+  // mid-exercise (issue #54).
+  useWakeLock();
   const [selectedExercise, setSelectedExercise] = useState(null);
   // When an exercise is opened from a day's *log* (a past day in the week
   // strip, or the Progress calendar), this holds that date and the detail
