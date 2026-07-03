@@ -12,6 +12,7 @@ import {
   getDaysOverdue,
   getStreak,
   getCompletionDateMap,
+  groupDayCards,
 } from './tracker.js';
 
 // Thursday, fixed so every "today"/"days ago" calculation below is
@@ -299,5 +300,28 @@ describe('getCompletionDateMap', () => {
     expect(today[0].time < today[1].time || today[0].sortMs < today[1].sortMs).toBe(true);
     expect(today[0].name).toBe('Test exercise');
     expect(map.get('2026-07-01')).toHaveLength(1);
+  });
+});
+
+describe('groupDayCards', () => {
+  it('groups a day\'s sessions into one card per exercise, times in order', () => {
+    const exercises = [
+      { id: 1, name: 'Belly lift' },
+      { id: 2, name: 'Bicycling hind leg' },
+    ];
+    const completions = {
+      '1': [new Date('2026-07-02T08:00:00').toISOString(), new Date('2026-07-02T14:00:00').toISOString()],
+      '2': [new Date('2026-07-02T10:00:00').toISOString()],
+    };
+    const dateMap = getCompletionDateMap(completions, exercises);
+    const cards = groupDayCards(dateMap, '2026-07-02');
+    expect(cards).toHaveLength(2);
+    const bellyLift = cards.find((c) => c.id === 1);
+    expect(bellyLift.times).toHaveLength(2);
+  });
+
+  it('returns an empty array for a day with no sessions', () => {
+    const dateMap = getCompletionDateMap({}, []);
+    expect(groupDayCards(dateMap, '2026-07-02')).toEqual([]);
   });
 });

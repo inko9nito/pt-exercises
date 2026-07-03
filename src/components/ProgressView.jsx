@@ -1,45 +1,29 @@
 import { useMemo, useState } from 'react';
 import ProgressRing from './ProgressRing.jsx';
 import MonthCalendar from './MonthCalendar.jsx';
-import { CheckCircleIcon, CheckBadgeIcon, ChevronRightIcon, FlameIcon, StarIcon } from './Icons.jsx';
-import { exercises, exerciseById } from '../data/exercises.js';
-import { assetUrl } from '../utils/asset.js';
+import DayLogList from './DayLogList.jsx';
+import { CheckCircleIcon, FlameIcon } from './Icons.jsx';
+import { exercises } from '../data/exercises.js';
 import { formatDateLong } from '../utils/format.js';
-import {
-  getTotalSessions,
-  getStreak,
-  getCompletionDateMap,
-  getPlanProgress,
-  getPlanProgressOn,
-  isScheduledOn,
-} from '../utils/tracker.js';
+import { getTotalSessions, getStreak, getPlanProgressOn, groupDayCards } from '../utils/tracker.js';
 
-export default function ProgressView({ completions, onOpenExercise }) {
+export default function ProgressView({ completions, todayModel, onOpenExercise }) {
+  const { dateMap, planTotal, planDone, bonusDone } = todayModel;
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const { planTotal, planDone, bonusDone } = useMemo(
-    () => getPlanProgress(exercises, completions),
-    [completions]
-  );
-
   const totalSessions = useMemo(() => getTotalSessions(completions), [completions]);
   const streak = useMemo(() => getStreak(completions), [completions]);
-  const dateMap = useMemo(() => getCompletionDateMap(completions, exercises), [completions]);
 
   // Group the selected day's sessions by exercise so each renders as one card
   // carrying how many times it was done and at what times, plus that day's
   // own plan stats.
   const day = useMemo(() => {
     if (!selectedDate) return null;
-    const byId = new Map();
-    for (const item of dateMap.get(selectedDate) || []) {
-      if (!byId.has(item.id)) byId.set(item.id, { id: item.id, times: [] });
-      byId.get(item.id).times.push(item.time);
-    }
+    const cards = groupDayCards(dateMap, selectedDate);
     const date = new Date(`${selectedDate}T12:00:00`);
     const { planTotal: pt, planDone: pd, bonusDone: bd } = getPlanProgressOn(exercises, completions, date);
-    return { cards: Array.from(byId.values()), date, planTotal: pt, planDone: pd, bonusDone: bd };
+    return { cards, date, planTotal: pt, planDone: pd, bonusDone: bd };
   }, [selectedDate, dateMap, completions]);
 
   return (
@@ -84,48 +68,13 @@ export default function ProgressView({ completions, onOpenExercise }) {
             )}
           </div>
 
-          {day.cards.length > 0 ? (
-            <div className="row-group">
-              {day.cards.map((card) => {
-                const ex = exerciseById.get(card.id);
-                if (!ex) return null;
-                const extra = !isScheduledOn(ex, completions, day.date);
-                return (
-                  <button
-                    key={card.id}
-                    className="exercise-row"
-                    onClick={() => onOpenExercise && onOpenExercise(ex, day.date)}
-                  >
-                    <span className="row-thumb">
-                      <img src={assetUrl(ex.images[0])} alt="" loading="lazy" />
-                    </span>
-                    <span className="row-body">
-                      <span className="row-name">{ex.name}</span>
-                      <span className="row-meta">
-                        {card.times.length > 1
-                          ? `${card.times.length}× · ${card.times.join(', ')}`
-                          : `Done ${card.times[0]}`}
-                      </span>
-                    </span>
-                    {extra && (
-                      <span className="row-extra-badge">
-                        <StarIcon size={11} />
-                        Extra
-                      </span>
-                    )}
-                    <span className="row-status-check">
-                      <CheckBadgeIcon size={21} />
-                    </span>
-                    <span className="row-chevron">
-                      <ChevronRightIcon size={18} />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="day-detail-empty">No exercises logged this day.</p>
-          )}
+          <DayLogList
+            cards={day.cards}
+            date={day.date}
+            completions={completions}
+            onOpenExercise={onOpenExercise}
+            emptyMessage="No exercises logged this day."
+          />
         </div>
       )}
     </div>

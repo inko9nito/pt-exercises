@@ -6,6 +6,7 @@ import ExerciseDetail from './components/ExerciseDetail.jsx';
 import { CalendarIcon, ListIcon, TrendingUpIcon, RefreshIcon } from './components/Icons.jsx';
 import { loadCompletions, saveCompletions, markDone, markDoneOn, removeSessionOn } from './utils/tracker.js';
 import { subscribeToCompletions, pushCompletions } from './utils/sync.js';
+import { useTodayModel } from './utils/useTodayModel.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
@@ -47,6 +48,11 @@ function BuildInfo({ onRefresh }) {
 export default function App() {
   const [tab, setTabState] = useState(getInitialTab);
   const [completions, setCompletions] = useState(() => loadCompletions());
+  // Computed once here (rather than separately inside DailyView/ProgressView)
+  // so it survives tab switches — App never unmounts, so this only
+  // recomputes when `completions` actually changes, not on every navigation
+  // back to a tab.
+  const todayModel = useTodayModel(completions);
   const [selectedExercise, setSelectedExercise] = useState(null);
   // When an exercise is opened from a day's *log* (a past day in the week
   // strip, or the Progress calendar), this holds that date and the detail
@@ -231,6 +237,7 @@ export default function App() {
         {tab === TAB_TODAY && (
           <DailyView
             completions={completions}
+            todayModel={todayModel}
             onOpenExercise={openExercise}
             onLogForDate={handleLogForDate}
           />
@@ -239,7 +246,7 @@ export default function App() {
           <AllExercises completions={completions} onOpenExercise={openExercise} />
         )}
         {tab === TAB_PROGRESS && (
-          <ProgressView completions={completions} onOpenExercise={openExercise} />
+          <ProgressView completions={completions} todayModel={todayModel} onOpenExercise={openExercise} />
         )}
         <BuildInfo onRefresh={handleRefresh} />
       </main>

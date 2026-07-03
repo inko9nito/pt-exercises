@@ -363,3 +363,16 @@ export function getCompletionDateMap(completions, exercises) {
   }
   return map;
 }
+
+// Groups a day's raw completion-map entries (one per session, from
+// getCompletionDateMap) into one card per exercise, carrying every time it
+// was done that day — so an exercise done multiple times renders as a single
+// row rather than one row per session.
+export function groupDayCards(dateMap, dateKeyForDay) {
+  const byId = new Map();
+  for (const item of dateMap.get(dateKeyForDay) || []) {
+    if (!byId.has(item.id)) byId.set(item.id, { id: item.id, times: [] });
+    byId.get(item.id).times.push(item.time);
+  }
+  return Array.from(byId.values());
+}
