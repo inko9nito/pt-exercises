@@ -57,6 +57,15 @@ import { useEffect, useState } from 'react';
 // the web-clip case all three mechanisms run at once and every status is
 // shown.
 //
+// The video is paused whenever the page is hidden — screen locked or app
+// backgrounded — and resumed when it's visible again (issue #75). Nothing
+// needs keeping awake behind a locked screen, and pausing lets iOS dismiss
+// the "Now Playing" card that unmuted playback otherwise strands on the lock
+// screen (where tapping it opened some other web clip, not this one). While
+// the app is foreground the card is claimed via MediaSession so it reads as,
+// and taps back to, this app. Keep-awake while visible is unchanged — do NOT
+// make the video keep playing through visibility changes or the box returns.
+//
 // DO NOT "simplify" the web clip down to a subset of the three. This
 // exact all-three configuration is the only one that has ever held the
 // screen on a real device (on-device report #6). Report #7 tried the
@@ -239,6 +248,33 @@ function runVideoFallback(setStatus, onActive = () => {}) {
     video.appendChild(source);
   }
 
+  // Own the OS "Now Playing" card while the video is what's keeping the
+  // screen awake (issue #75). Claiming it with metadata makes the card
+  // identify as this app, so tapping it returns here instead of surfacing
+  // some other web clip; clearing it on pause tears the card down so it
+  // doesn't linger on the lock screen once playback stops.
+  const hasMediaSession =
+    typeof navigator !== 'undefined' && 'mediaSession' in navigator;
+  const claimSession = () => {
+    if (!hasMediaSession) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: "Domino's PT Exercises",
+        artist: 'Keeping the screen on',
+        artwork: [{ src: `${base}paw.svg`, type: 'image/svg+xml' }],
+      });
+      navigator.mediaSession.playbackState = 'playing';
+    } catch {
+      // Some engines expose mediaSession without MediaMetadata; leaving the
+      // card unclaimed is no worse than before this hook touched it.
+    }
+  };
+  const clearSession = () => {
+    if (!hasMediaSession) return;
+    navigator.mediaSession.playbackState = 'none';
+    navigator.mediaSession.metadata = null;
+  };
+
   // NoSleep.js's scheme, on which the whole fallback is modeled: the
   // sub-second webm can loop, but the mp4 (what iOS actually plays) must
   // never loop or end — see the header comment. duration <= 1 tells the
@@ -253,17 +289,26 @@ function runVideoFallback(setStatus, onActive = () => {}) {
     }
   });
 
+  // needsTap (issue #68) means keep-awake has *never* armed — a real tap is
+  // still owed to start the video. Once it has played once, later pauses are
+  // the visibility-gated pause below (screen lock), not a lost arm, so they
+  // must not re-raise the "tap to keep the screen on" hint on every unlock.
+  let hasPlayed = false;
   video.addEventListener('playing', () => {
+    hasPlayed = true;
     setStatus('video playing');
     onActive(true);
+    claimSession();
   });
   video.addEventListener('pause', () => {
     setStatus('video paused');
-    onActive(false);
+    if (!hasPlayed) onActive(false);
+    clearSession();
   });
   video.addEventListener('error', () => {
     setStatus('video error');
     onActive(false);
+    clearSession();
   });
   setStatus('video waiting for tap');
   onActive(false);
@@ -284,8 +329,14 @@ function runVideoFallback(setStatus, onActive = () => {}) {
   // attached (rather than removed after first success) so playback also
   // recovers if the OS pauses it for some other reason.
   document.addEventListener('pointerdown', play);
+  // Visible: (re)start playback so the screen stays awake. Hidden (screen
+  // locked or app backgrounded): pause — there's nothing to keep awake, and
+  // pausing lets the Now Playing card be dismissed rather than stranded on
+  // the lock screen (issue #75). Returning to visible resumes without
+  // resetting currentTime, so keep-awake picks straight back up.
   const onVisibilityChange = () => {
     if (document.visibilityState === 'visible') play();
+    else video.pause();
   };
   document.addEventListener('visibilitychange', onVisibilityChange);
 
@@ -297,6 +348,7 @@ function runVideoFallback(setStatus, onActive = () => {}) {
     document.removeEventListener('visibilitychange', onVisibilityChange);
     video.pause();
     video.remove();
+    clearSession();
   };
 }
 
