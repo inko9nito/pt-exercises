@@ -12,15 +12,21 @@ import {
   removeSessionOn,
   shouldTrustRemoteSnapshot,
 } from './utils/tracker.js';
-import { subscribeToCompletions, pushExerciseCompletions } from './utils/sync.js';
+import {
+  subscribeToCompletions,
+  pushExerciseCompletions,
+  replayPendingWrites,
+} from './utils/sync.js';
 import { useTodayModel } from './utils/useTodayModel.js';
 import { useWakeLock } from './utils/useWakeLock.js';
+import { exercises } from './data/exercises.js';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
 const TAB_PROGRESS = 'progress';
 const VALID_TABS = [TAB_TODAY, TAB_ALL, TAB_PROGRESS];
 const DETAIL_EXIT_MS = 300;
+const EX_PARAM = 'ex';
 
 // The active tab is mirrored into the URL's ?tab= param (via replaceState,
 // so it doesn't grow the history stack) purely so a hard reload — like the
@@ -29,6 +35,33 @@ const DETAIL_EXIT_MS = 300;
 function getInitialTab() {
   const fromUrl = new URLSearchParams(window.location.search).get('tab');
   return VALID_TABS.includes(fromUrl) ? fromUrl : TAB_TODAY;
+}
+
+// The open exercise is likewise mirrored into ?ex= so a hard reload restores
+// it instead of dumping you back on the list (issue #68 #1). That matters
+// most for the keep-awake refresh hack's rare *real* reload — which can fire
+// while you're mid-exercise with the detail open — but it also fixes the
+// footer refresh button, which until now silently closed the open exercise.
+// Restored in the normal (today) mode; a past-day log entry reopens as today,
+// an acceptable degradation for a rare reload rather than encoding logDate.
+function getInitialExercise() {
+  const raw = new URLSearchParams(window.location.search).get(EX_PARAM);
+  if (!raw) return null;
+  const id = Number(raw);
+  return exercises.find((ex) => ex.id === id) || null;
+}
+
+// Current URL with ?ex= set (or removed when id is null), preserving ?tab=
+// and anything else. Used for the pushed detail entry and the list entry it
+// sits on top of.
+function exerciseUrl(id) {
+  const url = new URL(window.location.href);
+  // Never carry the refresh button's transient cache-buster into a pushed
+  // entry — same intent as the '_' cleanup effect below.
+  url.searchParams.delete('_');
+  if (id == null) url.searchParams.delete(EX_PARAM);
+  else url.searchParams.set(EX_PARAM, String(id));
+  return url.toString();
 }
 
 // The verbose keep-awake diagnostic (`wake: video playing · lock failed …`)
@@ -96,7 +129,9 @@ export default function App() {
   // mid-exercise (issue #54). The returned status is shown next to the
   // build info so on-device behavior is diagnosable without a debugger.
   const { status: wakeStatus, needsTap } = useWakeLock();
-  const [selectedExercise, setSelectedExercise] = useState(null);
+  // Initialized from ?ex= so a hard reload (see getInitialExercise) restores
+  // the open exercise rather than resetting to the list.
+  const [selectedExercise, setSelectedExercise] = useState(getInitialExercise);
   // When an exercise is opened from a day's *log* (a past day in the week
   // strip, or the Progress calendar), this holds that date and the detail
   // switches to a read-only log entry whose only action is removing that
@@ -108,10 +143,36 @@ export default function App() {
   // snapshot can't always be trusted at face value.
   const trustedRemoteRef = useRef(false);
 
+  // If ?ex= restored an open exercise on load (e.g. after the keep-awake
+  // refresh hack's rare real reload, or the footer refresh button), the
+  // history stack is a single entry — nothing for the in-app back button /
+  // edge-swipe to return to. Rebuild the [list, detail] pair the normal
+  // open flow produces, so closing lands on the list instead of leaving the
+  // app. The ref guard keeps StrictMode's dev double-invoke from pushing
+  // twice (it's a one-time bootstrap, not a subscription).
+  const historyRestoredRef = useRef(false);
+  useEffect(() => {
+    if (historyRestoredRef.current) return;
+    historyRestoredRef.current = true;
+    if (!selectedExercise) return;
+    window.history.replaceState({}, '', exerciseUrl(null));
+    window.history.pushState(
+      { exerciseId: selectedExercise.id },
+      '',
+      exerciseUrl(selectedExercise.id)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Firebase is the source of truth; localStorage is just a fast local
   // cache so the app shows last-known state instantly before the
   // subscription connects (and still works if briefly offline).
   useEffect(() => {
+    // Re-push any writes still marked pending from a prior session before the
+    // subscription can overwrite the local cache with a remote snapshot that
+    // predates them (issue #68 #2). Synchronous, so it reads the local cache
+    // ahead of the subscription's first (async) delivery.
+    replayPendingWrites();
     const unsubData = subscribeToCompletions((remote) => {
       if (!shouldTrustRemoteSnapshot(remote, trustedRemoteRef.current)) return;
       trustedRemoteRef.current = true;
@@ -173,7 +234,10 @@ export default function App() {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
-    window.history.pushState({ exerciseId: exercise.id }, '');
+    // ?ex= rides along on the pushed entry so a reload restores the open
+    // exercise; back/edge-swipe reverts to the previous (list) entry, whose
+    // URL has no ?ex, so it clears naturally without extra bookkeeping.
+    window.history.pushState({ exerciseId: exercise.id }, '', exerciseUrl(exercise.id));
     setDetailClosing(false);
     setLogDate(date);
     setSelectedExercise(exercise);
@@ -187,7 +251,7 @@ export default function App() {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
-    window.history.replaceState({ exerciseId: exercise.id }, '');
+    window.history.replaceState({ exerciseId: exercise.id }, '', exerciseUrl(exercise.id));
     setDetailClosing(false);
     setSelectedExercise(exercise);
   }, []);
