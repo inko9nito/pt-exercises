@@ -34,7 +34,7 @@ function getInitialTab() {
 // __BUILD_TIME__/__BUILD_COMMIT__ are injected at build time (see
 // vite.config.js) so it's obvious on-device whether a stale, cached bundle
 // is being viewed instead of the latest deploy.
-function BuildInfo({ onRefresh }) {
+function BuildInfo({ onRefresh, wakeStatus }) {
   const built = new Date(__BUILD_TIME__).toLocaleString([], {
     month: 'short',
     day: 'numeric',
@@ -44,7 +44,7 @@ function BuildInfo({ onRefresh }) {
   return (
     <div className="build-info">
       <span>
-        Build {__BUILD_COMMIT__} · {built}
+        Build {__BUILD_COMMIT__} · {built} · wake: {wakeStatus}
       </span>
       <button className="refresh-button" onClick={onRefresh} aria-label="Refresh">
         <RefreshIcon size={13} />
@@ -62,8 +62,9 @@ export default function App() {
   // back to a tab.
   const todayModel = useTodayModel(completions);
   // Hold the screen awake while the app is open so the phone doesn't lock
-  // mid-exercise (issue #54).
-  useWakeLock();
+  // mid-exercise (issue #54). The returned status is shown next to the
+  // build info so on-device behavior is diagnosable without a debugger.
+  const wakeStatus = useWakeLock();
   const [selectedExercise, setSelectedExercise] = useState(null);
   // When an exercise is opened from a day's *log* (a past day in the week
   // strip, or the Progress calendar), this holds that date and the detail
@@ -253,7 +254,7 @@ export default function App() {
         {tab === TAB_PROGRESS && (
           <ProgressView completions={completions} todayModel={todayModel} onOpenExercise={openExercise} />
         )}
-        <BuildInfo onRefresh={handleRefresh} />
+        <BuildInfo onRefresh={handleRefresh} wakeStatus={wakeStatus} />
       </main>
 
       <nav className="bottom-nav">

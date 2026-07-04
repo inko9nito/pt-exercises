@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Keeps the screen awake while the app is open, so the phone doesn't lock
 // mid-exercise (issue #54): you've got the app propped up doing a rep with
@@ -14,33 +14,47 @@ import { useEffect } from 'react';
 //      visibilitychange back to visible — the documented way to hold it
 //      across the app's whole lifetime.
 //
-//   2. A silent, looping, invisible video, forced specifically for iOS's
+//   2. A silent, invisible video, forced specifically for iOS's
 //      home-screen "web clip" apps (navigator.standalone). That's not a
 //      guess: #54 was verified fixed in a regular Safari tab but the screen
 //      still locked in the installed home-screen app, which matches a
 //      known WebKit gap — the Wake Lock API can resolve successfully there
-//      without actually stopping the OS's auto-lock timer. Playing muted
-//      video is the older, pre-Wake-Lock-API trick (what NoSleep.js has
-//      always relied on) and isn't subject to that bug, so it's used as the
-//      forced path in standalone mode rather than as a try/catch fallback
-//      to the same broken API. Video playback needs a user gesture the
-//      first time, which the app has plenty of (marking exercises done,
-//      switching tabs, etc.) — see runVideoFallback.
+//      without actually stopping the OS's auto-lock timer.
+//
+// The video path deliberately copies NoSleep.js's playback scheme instead
+// of a plain <video loop>: iOS treats a short video on a loop as ignorable
+// and lets the screen sleep anyway (the first cut of this fallback looped,
+// and the web clip's screen still locked — issue #54's second report).
+// NoSleep's trick is to never let the mp4 loop or end: every timeupdate
+// past the 0.5s mark seeks back to a random early position, so as far as
+// the OS is concerned one continuous video has been playing the whole
+// time. The sub-second webm (for non-iOS browsers without the native API)
+// does use loop, matching NoSleep. Playback also needs one real tap to
+// start (autoplay policy), which the app's normal use provides.
+//
+// The hook returns a short status string ("lock held", "video playing",
+// …) that App surfaces next to the build info in the footer — issue #54
+// took several rounds of "did it work on the actual device?" and this
+// makes the answer visible on the phone itself instead of inferred.
 function isIOSStandalone() {
   return typeof navigator !== 'undefined' && navigator.standalone === true;
 }
 
 export function useWakeLock() {
+  const [status, setStatus] = useState('starting');
+
   useEffect(() => {
     if (typeof navigator === 'undefined') return undefined;
     if (isIOSStandalone() || !('wakeLock' in navigator)) {
-      return runVideoFallback();
+      return runVideoFallback(setStatus);
     }
-    return runNativeWakeLock();
+    return runNativeWakeLock(setStatus);
   }, []);
+
+  return status;
 }
 
-function runNativeWakeLock() {
+function runNativeWakeLock(setStatus) {
   let sentinel = null;
   // Set once we've torn down, so an in-flight request() that resolves after
   // cleanup releases immediately instead of re-locking a screen we no longer
@@ -59,15 +73,18 @@ function runNativeWakeLock() {
         sentinel = null;
         return;
       }
+      setStatus('lock held');
       // The OS can drop the lock on its own (e.g. low battery); clear our
       // handle so the next visibility change is free to re-acquire.
       sentinel.addEventListener('release', () => {
         sentinel = null;
+        if (!cancelled) setStatus('lock dropped');
       });
-    } catch {
+    } catch (err) {
       // Denied or interrupted — leave the screen to its normal timeout
       // rather than surfacing an error the user can't act on.
       sentinel = null;
+      setStatus(`lock failed (${err?.name || 'error'})`);
     }
   };
 
@@ -88,12 +105,16 @@ function runNativeWakeLock() {
   };
 }
 
-function runVideoFallback() {
+function runVideoFallback(setStatus) {
   const video = document.createElement('video');
   video.muted = true;
   video.setAttribute('muted', '');
   video.setAttribute('playsinline', '');
   video.setAttribute('title', 'keep-awake (silent, not displayed)');
+  // Kept in the DOM (newer iOS is pickier about off-document media), but
+  // invisible and inert. Not display:none — that can suspend playback.
+  video.style.cssText =
+    'position:fixed;left:-1px;top:auto;width:1px;height:1px;opacity:0;pointer-events:none;';
 
   const base = import.meta.env.BASE_URL;
   for (const [file, type] of [
@@ -105,8 +126,27 @@ function runVideoFallback() {
     source.type = type;
     video.appendChild(source);
   }
-  video.loop = true;
-  video.load();
+
+  // NoSleep.js's scheme, on which the whole fallback is modeled: the
+  // sub-second webm can loop, but the mp4 (what iOS actually plays) must
+  // never loop or end — see the header comment. duration <= 1 tells the
+  // two apart without caring which source the browser picked.
+  video.addEventListener('loadedmetadata', () => {
+    if (video.duration <= 1) {
+      video.setAttribute('loop', '');
+    } else {
+      video.addEventListener('timeupdate', () => {
+        if (video.currentTime > 0.5) video.currentTime = Math.random();
+      });
+    }
+  });
+
+  video.addEventListener('playing', () => setStatus('video playing'));
+  video.addEventListener('pause', () => setStatus('video paused'));
+  video.addEventListener('error', () => setStatus('video error'));
+  setStatus('video waiting for tap');
+
+  document.body.appendChild(video);
 
   let cancelled = false;
   const play = () => {
@@ -134,5 +174,6 @@ function runVideoFallback() {
     document.removeEventListener('pointerdown', play);
     document.removeEventListener('visibilitychange', onVisibilityChange);
     video.pause();
+    video.remove();
   };
 }
