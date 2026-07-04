@@ -133,14 +133,21 @@ button {
 
 .build-info {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 4px;
   text-align: center;
   font-size: 11px;
   font-weight: 500;
   color: var(--ink-3);
   padding: var(--space-5) 0 var(--space-4);
+}
+
+.build-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .refresh-button {

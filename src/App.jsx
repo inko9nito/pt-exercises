@@ -43,12 +43,15 @@ function BuildInfo({ onRefresh, wakeStatus }) {
   });
   return (
     <div className="build-info">
-      <span>
-        Build {__BUILD_COMMIT__} · {built} · wake: {wakeStatus}
-      </span>
-      <button className="refresh-button" onClick={onRefresh} aria-label="Refresh">
-        <RefreshIcon size={13} />
-      </button>
+      <div className="build-info-row">
+        <span>
+          Build {__BUILD_COMMIT__} · {built}
+        </span>
+        <button className="refresh-button" onClick={onRefresh} aria-label="Refresh">
+          <RefreshIcon size={13} />
+        </button>
+      </div>
+      <span>wake: {wakeStatus}</span>
     </div>
   );
 }
