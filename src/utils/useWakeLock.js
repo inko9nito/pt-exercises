@@ -62,7 +62,10 @@ import { useEffect, useState } from 'react';
 // needs keeping awake behind a locked screen, and merely pausing is not
 // enough: iOS leaves a *paused* "Now Playing" card stranded on the lock
 // screen (verified on-device — the card stayed, just switched to its play
-// button). The media has to be unloaded outright — no loaded media, no card.
+// button). Unloading the video's sources isn't enough either: iOS keeps the
+// card alive for a media element that has played and is still in the page. So
+// the audio is actually stopped and the element detached from the document —
+// no audio, no in-page media element, no card.
 // While the app is foreground the card is claimed via MediaSession so it
 // reads as, and taps back to, this app. Keep-awake while visible is
 // unchanged — do NOT let the video survive visibility changes or the box
@@ -328,8 +331,6 @@ function runVideoFallback(setStatus, onActive = () => {}) {
   setStatus('video waiting for tap');
   onActive(false);
 
-  document.body.appendChild(video);
-
   let cancelled = false;
   const play = () => {
     if (cancelled) return;
@@ -339,22 +340,29 @@ function runVideoFallback(setStatus, onActive = () => {}) {
     video.play().catch(() => {});
   };
 
-  // Bring keep-awake up: make sure the media is loaded, then play.
+  // Bring keep-awake up: re-attach the element if it was detached, make sure
+  // the media is loaded, then play.
   const arm = () => {
     if (cancelled) return;
+    if (!video.isConnected) document.body.appendChild(video);
     loadSources();
     play();
   };
   // Take it fully down while the app is hidden. Pausing alone leaves a paused
-  // Now Playing card on the lock screen (issue #75), so the media is unloaded
-  // outright — with nothing loaded there's no card. currentTime resetting is
-  // fine: nothing needs keeping awake behind a lock, and arm() rebuilds it on
-  // return.
+  // Now Playing card on the lock screen, and just unloading the sources isn't
+  // enough either — iOS keeps the card alive for a media element that has
+  // played and is still in the document (issue #75). So actually stop the
+  // audio: unload every source, abort the resource with load(), and detach
+  // the element from the page. No audio, no in-page media element, no card.
+  // currentTime resetting is fine — nothing needs keeping awake behind a
+  // lock, and arm() rebuilds it all on return.
   const disarm = () => {
     video.pause();
     while (video.firstChild) video.removeChild(video.firstChild);
     video.removeAttribute('src');
+    video.srcObject = null;
     video.load();
+    video.remove();
     clearSession();
   };
 
@@ -379,7 +387,6 @@ function runVideoFallback(setStatus, onActive = () => {}) {
     document.removeEventListener('pointerdown', arm);
     document.removeEventListener('visibilitychange', onVisibilityChange);
     disarm();
-    video.remove();
   };
 }
 
