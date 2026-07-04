@@ -5,7 +5,7 @@ import DayLogList from './DayLogList.jsx';
 import { CheckCircleIcon, FlameIcon } from './Icons.jsx';
 import { exercises } from '../data/exercises.js';
 import { formatDateLong } from '../utils/format.js';
-import { getTotalSessions, getStreak, getPlanProgressOn, groupDayCards } from '../utils/tracker.js';
+import { getTotalSessions, getStreak, getPlanProgressOn, getDayEntries } from '../utils/tracker.js';
 
 export default function ProgressView({ completions, plans, todayModel, onOpenExercise }) {
   const { dateMap, planTotal, planDone, bonusDone } = todayModel;
@@ -20,11 +20,11 @@ export default function ProgressView({ completions, plans, todayModel, onOpenExe
   // own plan stats.
   const day = useMemo(() => {
     if (!selectedDate) return null;
-    const cards = groupDayCards(dateMap, selectedDate);
     const date = new Date(`${selectedDate}T12:00:00`);
+    const entries = getDayEntries(exercises, completions, plans, date);
     const { planTotal: pt, planDone: pd, bonusDone: bd } = getPlanProgressOn(exercises, completions, date, plans);
-    return { cards, date, planTotal: pt, planDone: pd, bonusDone: bd };
-  }, [selectedDate, dateMap, completions, plans]);
+    return { entries, date, planTotal: pt, planDone: pd, bonusDone: bd };
+  }, [selectedDate, completions, plans]);
 
   return (
     <div className="progress-view">
@@ -69,12 +69,10 @@ export default function ProgressView({ completions, plans, todayModel, onOpenExe
           </div>
 
           <DayLogList
-            cards={day.cards}
+            entries={day.entries}
             date={day.date}
-            completions={completions}
-            plans={plans}
             onOpenExercise={onOpenExercise}
-            emptyMessage="No exercises logged this day."
+            emptyMessage="Nothing planned or logged this day."
           />
         </div>
       )}

@@ -578,6 +578,53 @@ export function getCompletionDateMap(completions, exercises) {
   return map;
 }
 
+function formatSessionTime(iso) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// The full plan-vs-actual picture for a single day, for the past-day log
+// views — so a past day reads like Today (its planned exercises shown
+// alongside what was completed) instead of listing only what happened to be
+// logged (issue #53). Order mirrors Today: missed planned exercises first
+// (the day's unfinished "to do"), then completed plan exercises, then any
+// extra sessions. `plans` chooses the snapshot vs live-reconstruction path
+// exactly like getPlanProgressOn/isExtraOn.
+export function getDayEntries(exercises, completions, plans, date) {
+  // "Missed" only makes sense once a day is over — today isn't a miss until
+  // it ends, and a future day certainly isn't. So planned-but-not-done rows
+  // are shown only for strictly-past days; today/future show just what's
+  // actually been logged (matching the old completed-only past behavior).
+  const showMissed = dateKey(date) < dateKey(new Date());
+  const missed = [];
+  const donePlanned = [];
+  const doneExtra = [];
+  for (const ex of exercises) {
+    const sessions = getSessionsOn(completions, ex.id, date);
+    const onPlan = !isExtraOn(ex, completions, date, plans);
+    if (sessions.length > 0) {
+      const entry = {
+        id: ex.id,
+        name: ex.name,
+        freqLabel: ex.freqLabel,
+        done: true,
+        extra: !onPlan,
+        times: sessions.map(formatSessionTime),
+      };
+      (onPlan ? donePlanned : doneExtra).push(entry);
+    } else if (onPlan && showMissed) {
+      missed.push({
+        id: ex.id,
+        name: ex.name,
+        freqLabel: ex.freqLabel,
+        done: false,
+        extra: false,
+        times: [],
+      });
+    }
+  }
+  return [...missed, ...donePlanned, ...doneExtra];
+}
+
 // Groups a day's raw completion-map entries (one per session, from
 // getCompletionDateMap) into one card per exercise, carrying every time it
 // was done that day — so an exercise done multiple times renders as a single

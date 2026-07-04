@@ -611,6 +611,23 @@ button {
   font-weight: 700;
 }
 
+/* A planned-but-not-done exercise on a past day (issue #53): muted "Missed"
+   pill, and the whole row dimmed so completed rows stay visually dominant. */
+.row-status-missed {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.exercise-row.is-missed {
+  opacity: 0.68;
+}
+
 .row-body {
   flex: 1;
   display: flex;

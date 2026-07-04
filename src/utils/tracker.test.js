@@ -22,6 +22,7 @@ import {
   missingPlanDays,
   isExtraOn,
   normalizePlans,
+  getDayEntries,
 } from './tracker.js';
 
 // Thursday, fixed so every "today"/"days ago" calculation below is
@@ -539,6 +540,51 @@ describe('missingPlanDays', () => {
       plans[k] = { exercises: {}, amendments: {}, source: 'backfilled' };
     }
     expect(missingPlanDays(completions, plans, NOW)).toEqual([]);
+  });
+});
+
+describe('getDayEntries', () => {
+  const day = new Date('2026-07-01T12:00:00');
+  const key = dateKey(day);
+  const named = [
+    { ...dailyEx, name: 'Daily', freqLabel: 'Daily' },
+    { ...everyOtherDayEx, name: 'EOD', freqLabel: 'Every other day' },
+    { ...asNeededEx, name: 'AsNeeded', freqLabel: 'As needed' },
+  ];
+
+  it('shows planned exercises done or missed, plus extras, in that order', () => {
+    // Snapshot: only the daily exercise was planned that day.
+    const plans = { [key]: { exercises: { '1': { target: 1 } }, amendments: {} } };
+    // Daily done; the as-needed one logged as a bonus; EOD not planned/not done.
+    const completions = {
+      '1': [new Date('2026-07-01T09:00:00').toISOString()],
+      '8': [new Date('2026-07-01T10:00:00').toISOString()],
+    };
+    const entries = getDayEntries(named, completions, plans, day);
+    expect(entries.map((e) => [e.name, e.done, e.extra])).toEqual([
+      ['Daily', true, false], // planned + done
+      ['AsNeeded', true, true], // extra (bonus)
+    ]);
+  });
+
+  it('lists a planned-but-not-done exercise as missed', () => {
+    const plans = { [key]: { exercises: { '1': { target: 1 } }, amendments: {} } };
+    const entries = getDayEntries(named, {}, plans, day);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ name: 'Daily', done: false, extra: false });
+  });
+
+  it('falls back to reconstruction with no snapshot', () => {
+    // No plans: daily + EOD are scheduled (reconstruction), as-needed is not.
+    const entries = getDayEntries(named, {}, {}, day);
+    const missed = entries.filter((e) => !e.done).map((e) => e.name);
+    expect(missed).toEqual(['Daily', 'EOD']);
+  });
+
+  it('does not mark today (or future) planned exercises as missed', () => {
+    // NOW is 2026-07-02; nothing done today, but the day isn't over.
+    const entries = getDayEntries(named, {}, {}, new Date(NOW));
+    expect(entries.filter((e) => !e.done)).toEqual([]);
   });
 });
 
