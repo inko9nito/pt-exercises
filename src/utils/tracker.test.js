@@ -25,7 +25,6 @@ import {
   getDayEntries,
   affectedPlanDays,
   applyPlanAmendments,
-  buildPlanSnapshot,
 } from './tracker.js';
 
 // Thursday, fixed so every "today"/"days ago" calculation below is
