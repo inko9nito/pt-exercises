@@ -85,7 +85,16 @@
 }
 
 html {
+  /* Paint the whole canvas in the app colour so the centred column blends
+     edge-to-edge on wide screens (iPad / landscape) instead of showing bare
+     "side bars" where the column doesn't reach — issue #25. body's colour
+     doesn't always propagate to the canvas past the viewport on iOS. */
+  background: var(--bg);
   overscroll-behavior-y: none;
+  /* Stop iOS Safari from inflating text — and leaving the page zoomed in and
+     offset — when the device rotates to landscape and back (issue #25). */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
