@@ -71,8 +71,32 @@ function isIOSStandalone() {
   return typeof navigator !== 'undefined' && navigator.standalone === true;
 }
 
+// The contexts where keep-awake leans on the video (web clip, or any browser
+// without the native Wake Lock API) and so needs one real tap to start —
+// exactly the else branch of useWakeLock's effect. Computed up front so
+// needsTap can start correct without a synchronous setState in the effect.
+function needsGestureContext() {
+  return (
+    typeof navigator !== 'undefined' &&
+    (isIOSStandalone() || !('wakeLock' in navigator))
+  );
+}
+
+// Returns { status, needsTap }:
+//   status   — the detailed diagnostic string (footer, behind ?debug).
+//   needsTap — true only when keep-awake is waiting on a user gesture it
+//              can't fake: the video path needs one real tap to start
+//              (autoplay policy), and until it does the screen isn't held.
+//              Drives the "tap to keep the screen on" hint (issue #68 #4).
+//              Always false in the native-lock path — nothing to tap there.
+// needsTap is derived purely from the video's existing playing/pause
+// events; it observes the keep-awake machinery, it does not change it.
 export function useWakeLock() {
   const [status, setStatus] = useState('starting');
+  // Starts true in the gesture-required contexts; the video's playing/pause
+  // events flip it via onActive below. Initialized here (not set in the
+  // effect) so there's no synchronous setState in the effect body.
+  const [needsTap, setNeedsTap] = useState(needsGestureContext);
 
   useEffect(() => {
     if (typeof navigator === 'undefined') return undefined;
@@ -96,10 +120,13 @@ export function useWakeLock() {
         [parts.video, parts.lock, parts.refresh].filter(Boolean).join(' · ')
       );
     };
-    const stopVideo = runVideoFallback((s) => {
-      parts.video = s;
-      compose();
-    });
+    const stopVideo = runVideoFallback(
+      (s) => {
+        parts.video = s;
+        compose();
+      },
+      (active) => setNeedsTap(!active)
+    );
     const stopLock = hasNative
       ? runNativeWakeLock((s) => {
           parts.lock = s;
@@ -117,7 +144,7 @@ export function useWakeLock() {
     };
   }, []);
 
-  return status;
+  return { status, needsTap };
 }
 
 function runNativeWakeLock(setStatus) {
@@ -171,7 +198,11 @@ function runNativeWakeLock(setStatus) {
   };
 }
 
-function runVideoFallback(setStatus) {
+// `onActive(bool)` is an optional observer of whether the video is actually
+// playing (armed). It only reports state for the UI's tap hint; it never
+// gates or alters playback. Defaults to a no-op so the keep-awake path is
+// identical whether or not anyone's watching.
+function runVideoFallback(setStatus, onActive = () => {}) {
   const video = document.createElement('video');
   // NOT muted — see the header comment. The mp4's audio track is silent,
   // so nothing is audible; unmuted is what makes iOS count the playback.
@@ -214,10 +245,20 @@ function runVideoFallback(setStatus) {
     }
   });
 
-  video.addEventListener('playing', () => setStatus('video playing'));
-  video.addEventListener('pause', () => setStatus('video paused'));
-  video.addEventListener('error', () => setStatus('video error'));
+  video.addEventListener('playing', () => {
+    setStatus('video playing');
+    onActive(true);
+  });
+  video.addEventListener('pause', () => {
+    setStatus('video paused');
+    onActive(false);
+  });
+  video.addEventListener('error', () => {
+    setStatus('video error');
+    onActive(false);
+  });
   setStatus('video waiting for tap');
+  onActive(false);
 
   document.body.appendChild(video);
 

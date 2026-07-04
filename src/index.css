@@ -166,6 +166,56 @@ button {
   color: var(--ink-2);
 }
 
+/* "Tap anywhere to keep the screen on" hint (issue #68) — floats above the
+   bottom nav until the first tap arms keep-awake, then unmounts. Any tap
+   dismisses it because the same tap starts the keep-awake video. */
+.wake-hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 16px);
+  transform: translateX(-50%);
+  z-index: 90;
+  max-width: calc(100% - 32px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: var(--ink);
+  color: var(--white);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--shadow-raised);
+  animation: wake-hint-in 0.28s ease-out;
+}
+
+/* A small pulsing dot, so the pill reads as "keep-awake is off / waiting"
+   at a glance rather than as a static label. */
+.wake-hint::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: wake-hint-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes wake-hint-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes wake-hint-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wake-hint { animation: none; }
+  .wake-hint::before { animation: none; }
+}
+
 /* ============================================================
    Bottom Navigation
    ============================================================ */
