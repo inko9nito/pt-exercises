@@ -169,8 +169,10 @@ function runVideoFallback(setStatus) {
   // Visible on purpose — see the header comment. Small chip floating just
   // above the bottom nav, out of the way of taps (pointer-events:none)
   // but genuinely rendered, so iOS can't classify the playback as hidden.
+  // Bottom-LEFT: the footer's refresh button lives on the right, and the
+  // chip sitting on top of it made the button nearly untappable.
   video.style.cssText =
-    'position:fixed;right:10px;' +
+    'position:fixed;left:10px;' +
     'bottom:calc(var(--nav-height, 66px) + env(safe-area-inset-bottom) + 10px);' +
     'width:44px;height:26px;object-fit:cover;border-radius:6px;' +
     'background:#000;opacity:0.9;box-shadow:0 1px 4px rgba(0,0,0,0.3);' +
