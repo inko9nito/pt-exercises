@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
-import { normalizeCompletions } from './tracker.js';
+import { normalizeCompletions, loadCompletions } from './tracker.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyD-CxVuiQ4k94KKixh4y8iPHRxlODCXY24',
@@ -22,6 +22,48 @@ export function subscribeToCompletions(onChange) {
   });
 }
 
+// A write is "pending" from the moment it's issued until Firebase acks it.
+// The set of pending exercise ids is mirrored in localStorage so it survives
+// a page teardown — specifically the rare *real* reload the keep-awake
+// refresh hack can cause if its window.stop() lands late (issue #68 #2).
+// RTDB writes go over a persistent WebSocket, which window.stop() does NOT
+// abort — so a refresh *tick* can't lose a write. Only a full reload can,
+// and only in the sliver between issuing a write and it reaching the socket:
+// after such a reload the remote snapshot (missing that write) would
+// overwrite the local cache via the trust logic. Re-pushing anything still
+// marked pending on the next load closes that window; localStorage is the
+// source of truth for a write that may never have reached the server.
+const PENDING_KEY = 'domino_pending_writes';
+
+function readPending() {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePending(ids) {
+  try {
+    if (ids.length) localStorage.setItem(PENDING_KEY, JSON.stringify(ids));
+    else localStorage.removeItem(PENDING_KEY);
+  } catch {
+    // No localStorage (e.g. under test) — the safeguard just no-ops.
+  }
+}
+
+function markPending(id) {
+  const ids = readPending();
+  if (!ids.includes(id)) writePending([...ids, id]);
+}
+
+function clearPending(id) {
+  const ids = readPending();
+  if (ids.includes(id)) writePending(ids.filter((x) => x !== id));
+}
+
 // Writes only the one exercise's session history that actually changed,
 // instead of the whole completions tree — logging or undoing one exercise
 // used to re-upload every other exercise's full history too on every single
@@ -30,5 +72,30 @@ export function subscribeToCompletions(onChange) {
 // lands on, so this doesn't change anything about how subscribeToCompletions
 // receives updates.
 export function pushExerciseCompletions(exerciseId, history) {
-  return set(ref(db, `completions/${exerciseId}`), history);
+  const id = String(exerciseId);
+  // Mark pending *before* the write goes out; clear it only once the server
+  // confirms. Promise.resolve() tolerates a mocked set() that returns
+  // undefined (see sync.test.js) as well as Firebase's real Promise.
+  markPending(id);
+  return Promise.resolve(set(ref(db, `completions/${id}`), history)).then(
+    () => clearPending(id),
+    () => {
+      // Write failed — leave it pending so replayPendingWrites retries it on
+      // the next load rather than silently dropping it.
+    }
+  );
+}
+
+// Re-push any writes that were still pending when the page last went away.
+// Called once on startup, before the remote subscription can overwrite the
+// local cache, so the values re-pushed are the local ones that may not have
+// reached the server. Re-pushing an already-synced value is idempotent (a
+// set() to the same history), so a redundant replay is harmless.
+export function replayPendingWrites() {
+  const ids = readPending();
+  if (!ids.length) return;
+  const local = loadCompletions();
+  for (const id of ids) {
+    pushExerciseCompletions(id, local[id] || []);
+  }
 }
