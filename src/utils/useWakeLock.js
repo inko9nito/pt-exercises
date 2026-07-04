@@ -208,17 +208,19 @@ function runVideoFallback(setStatus, onActive = () => {}) {
   // so nothing is audible; unmuted is what makes iOS count the playback.
   video.setAttribute('playsinline', '');
   video.setAttribute('title', 'keep-awake');
-  // Visible on purpose — see the header comment. Small chip floating just
-  // above the bottom nav, out of the way of taps (pointer-events:none)
-  // but genuinely rendered, so iOS can't classify the playback as hidden.
-  // Bottom-LEFT: the footer's refresh button lives on the right, and the
-  // chip sitting on top of it made the button nearly untappable.
+  // Visible on purpose — see the header comment. Rendered as a 1px-tall
+  // hairline spanning the full width, sitting at the seam just above the
+  // bottom nav (issue #72), so the playback iOS requires reads as a subtle
+  // divider instead of a black box. Still genuinely on-screen and opaque —
+  // NOT hidden/zero-size/opacity-0, which #54 proved iOS ignores. If a 1px
+  // line turns out to be too small for iOS to count (screen sleeps again),
+  // increase the height until it holds. pointer-events:none so it never
+  // eats a tap.
   video.style.cssText =
-    'position:fixed;left:10px;' +
-    'bottom:calc(var(--nav-height, 66px) + env(safe-area-inset-bottom) + 10px);' +
-    'width:44px;height:26px;object-fit:cover;border-radius:6px;' +
-    'background:#000;opacity:0.9;box-shadow:0 1px 4px rgba(0,0,0,0.3);' +
-    'z-index:100;pointer-events:none;';
+    'position:fixed;left:0;right:0;' +
+    'bottom:calc(var(--nav-height, 66px) + env(safe-area-inset-bottom));' +
+    'width:100%;height:1px;object-fit:cover;' +
+    'opacity:0.9;z-index:100;pointer-events:none;';
 
   const base = import.meta.env.BASE_URL;
   for (const [file, type] of [
