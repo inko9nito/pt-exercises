@@ -41,6 +41,15 @@ import { useEffect, useState } from 'react';
 // first tap in the app (marking an exercise, switching tabs) is what
 // arms it — see the pointerdown listener in runVideoFallback.
 //
+// And the video is VISIBLE — a small floating chip above the bottom nav —
+// not a 1×1 transparent pixel. Fourth report: unmuted playback, footer
+// confirming "video playing", screen locked anyway. The remaining
+// difference between us and playback iOS respects was visibility: iOS's
+// media heuristics discount video it considers hidden (offscreen,
+// zero-ish size, opacity 0 — exactly how the chip was styled before).
+// The chip stays on top of everything, including the exercise detail
+// view, since mid-exercise is precisely when the screen must stay on.
+//
 // The hook returns a short status string ("lock held", "video playing",
 // …) that App surfaces next to the build info in the footer — issue #54
 // took several rounds of "did it work on the actual device?" and this
@@ -148,11 +157,16 @@ function runVideoFallback(setStatus) {
   // NOT muted — see the header comment. The mp4's audio track is silent,
   // so nothing is audible; unmuted is what makes iOS count the playback.
   video.setAttribute('playsinline', '');
-  video.setAttribute('title', 'keep-awake (silent, not displayed)');
-  // Kept in the DOM (newer iOS is pickier about off-document media), but
-  // invisible and inert. Not display:none — that can suspend playback.
+  video.setAttribute('title', 'keep-awake');
+  // Visible on purpose — see the header comment. Small chip floating just
+  // above the bottom nav, out of the way of taps (pointer-events:none)
+  // but genuinely rendered, so iOS can't classify the playback as hidden.
   video.style.cssText =
-    'position:fixed;left:-1px;top:auto;width:1px;height:1px;opacity:0;pointer-events:none;';
+    'position:fixed;right:10px;' +
+    'bottom:calc(var(--nav-height, 66px) + env(safe-area-inset-bottom) + 10px);' +
+    'width:44px;height:26px;object-fit:cover;border-radius:6px;' +
+    'background:#000;opacity:0.9;box-shadow:0 1px 4px rgba(0,0,0,0.3);' +
+    'z-index:100;pointer-events:none;';
 
   const base = import.meta.env.BASE_URL;
   for (const [file, type] of [
