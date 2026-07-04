@@ -29,13 +29,24 @@ import { useEffect, useState } from 'react';
 // past the 0.5s mark seeks back to a random early position, so as far as
 // the OS is concerned one continuous video has been playing the whole
 // time. The sub-second webm (for non-iOS browsers without the native API)
-// does use loop, matching NoSleep. Playback also needs one real tap to
-// start (autoplay policy), which the app's normal use provides.
+// does use loop, matching NoSleep.
+//
+// Just as deliberately, the video is NOT muted — that was issue #54's
+// *third* report: "video playing" in the footer and the screen still
+// locked. iOS only counts *audible-eligible* playback toward keeping the
+// screen on; a muted video is decorative no matter how it loops. NoSleep
+// never mutes, and its mp4 carries a silent audio track precisely so
+// unmuted playback registers as real media while producing no sound.
+// Unmuted play() can't start without a user gesture anywhere, so the
+// first tap in the app (marking an exercise, switching tabs) is what
+// arms it — see the pointerdown listener in runVideoFallback.
 //
 // The hook returns a short status string ("lock held", "video playing",
 // …) that App surfaces next to the build info in the footer — issue #54
 // took several rounds of "did it work on the actual device?" and this
-// makes the answer visible on the phone itself instead of inferred.
+// makes the answer visible on the phone itself instead of inferred. In
+// the web-clip case both mechanisms run at once (the broken-there native
+// lock is harmless belt-and-braces) and both statuses are shown.
 function isIOSStandalone() {
   return typeof navigator !== 'undefined' && navigator.standalone === true;
 }
@@ -45,10 +56,37 @@ export function useWakeLock() {
 
   useEffect(() => {
     if (typeof navigator === 'undefined') return undefined;
-    if (isIOSStandalone() || !('wakeLock' in navigator)) {
-      return runVideoFallback(setStatus);
+
+    const hasNative = 'wakeLock' in navigator;
+    if (!isIOSStandalone() && hasNative) {
+      return runNativeWakeLock(setStatus);
     }
-    return runNativeWakeLock(setStatus);
+
+    // iOS web clip (or no native API at all): the video trick is the real
+    // mechanism. In the web clip the native lock is requested too — it
+    // hasn't held the screen there in practice, but it costs nothing and
+    // showing both statuses tells the next on-device report exactly what
+    // each mechanism thought it was doing.
+    const parts = { video: '…', lock: hasNative ? '…' : null };
+    const compose = () => {
+      setStatus(
+        parts.lock === null ? parts.video : `${parts.video} · ${parts.lock}`
+      );
+    };
+    const stopVideo = runVideoFallback((s) => {
+      parts.video = s;
+      compose();
+    });
+    const stopLock = hasNative
+      ? runNativeWakeLock((s) => {
+          parts.lock = s;
+          compose();
+        })
+      : null;
+    return () => {
+      stopVideo();
+      if (stopLock) stopLock();
+    };
   }, []);
 
   return status;
@@ -107,8 +145,8 @@ function runNativeWakeLock(setStatus) {
 
 function runVideoFallback(setStatus) {
   const video = document.createElement('video');
-  video.muted = true;
-  video.setAttribute('muted', '');
+  // NOT muted — see the header comment. The mp4's audio track is silent,
+  // so nothing is audible; unmuted is what makes iOS count the playback.
   video.setAttribute('playsinline', '');
   video.setAttribute('title', 'keep-awake (silent, not displayed)');
   // Kept in the DOM (newer iOS is pickier about off-document media), but
