@@ -85,32 +85,11 @@ function isIOSStandalone() {
   return typeof navigator !== 'undefined' && navigator.standalone === true;
 }
 
-// The contexts where keep-awake leans on the video (web clip, or any browser
-// without the native Wake Lock API) and so needs one real tap to start —
-// exactly the else branch of useWakeLock's effect. Computed up front so
-// needsTap can start correct without a synchronous setState in the effect.
-function needsGestureContext() {
-  return (
-    typeof navigator !== 'undefined' &&
-    (isIOSStandalone() || !('wakeLock' in navigator))
-  );
-}
-
-// Returns { status, needsTap }:
-//   status   — the detailed diagnostic string (footer, behind ?debug).
-//   needsTap — true only when keep-awake is waiting on a user gesture it
-//              can't fake: the video path needs one real tap to start
-//              (autoplay policy), and until it does the screen isn't held.
-//              Drives the "tap to keep the screen on" hint (issue #68 #4).
-//              Always false in the native-lock path — nothing to tap there.
-// needsTap is derived purely from the video's existing playing/pause
-// events; it observes the keep-awake machinery, it does not change it.
+// Returns { status }: the detailed diagnostic string surfaced next to the
+// build info (behind ?debug). Keep-awake itself runs entirely inside the
+// effect below; this hook only exposes that readout.
 export function useWakeLock() {
   const [status, setStatus] = useState('starting');
-  // Starts true in the gesture-required contexts; the video's playing/pause
-  // events flip it via onActive below. Initialized here (not set in the
-  // effect) so there's no synchronous setState in the effect body.
-  const [needsTap, setNeedsTap] = useState(needsGestureContext);
 
   useEffect(() => {
     if (typeof navigator === 'undefined') return undefined;
@@ -134,13 +113,10 @@ export function useWakeLock() {
         [parts.video, parts.lock, parts.refresh].filter(Boolean).join(' · ')
       );
     };
-    const stopVideo = runVideoFallback(
-      (s) => {
-        parts.video = s;
-        compose();
-      },
-      (active) => setNeedsTap(!active)
-    );
+    const stopVideo = runVideoFallback((s) => {
+      parts.video = s;
+      compose();
+    });
     const stopLock = hasNative
       ? runNativeWakeLock((s) => {
           parts.lock = s;
@@ -158,7 +134,7 @@ export function useWakeLock() {
     };
   }, []);
 
-  return { status, needsTap };
+  return { status };
 }
 
 function runNativeWakeLock(setStatus) {
@@ -212,11 +188,7 @@ function runNativeWakeLock(setStatus) {
   };
 }
 
-// `onActive(bool)` is an optional observer of whether the video is actually
-// playing (armed). It only reports state for the UI's tap hint; it never
-// gates or alters playback. Defaults to a no-op so the keep-awake path is
-// identical whether or not anyone's watching.
-function runVideoFallback(setStatus, onActive = () => {}) {
+function runVideoFallback(setStatus) {
   const video = document.createElement('video');
   // NOT muted — see the header comment. The mp4's audio track is silent,
   // so nothing is audible; unmuted is what makes iOS count the playback.
@@ -307,29 +279,19 @@ function runVideoFallback(setStatus, onActive = () => {}) {
     }
   });
 
-  // needsTap (issue #68) means keep-awake has *never* armed — a real tap is
-  // still owed to start the video. Once it has played once, later pauses are
-  // the visibility-gated pause below (screen lock), not a lost arm, so they
-  // must not re-raise the "tap to keep the screen on" hint on every unlock.
-  let hasPlayed = false;
   video.addEventListener('playing', () => {
-    hasPlayed = true;
     setStatus('video playing');
-    onActive(true);
     claimSession();
   });
   video.addEventListener('pause', () => {
     setStatus('video paused');
-    if (!hasPlayed) onActive(false);
     clearSession();
   });
   video.addEventListener('error', () => {
     setStatus('video error');
-    onActive(false);
     clearSession();
   });
   setStatus('video waiting for tap');
-  onActive(false);
 
   let cancelled = false;
   const play = () => {

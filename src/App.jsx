@@ -84,11 +84,6 @@ const wakeParams =
     ? new URLSearchParams(window.location.search)
     : new URLSearchParams();
 const WAKE_DEBUG = wakeParams.has('debug');
-// The tap hint only appears in the iOS home-screen web clip (or a browser
-// with no Wake Lock API); a normal browser tab uses the native lock and
-// never shows it. ?wakehint force-renders it so its look is reviewable from
-// a plain preview link without installing the web clip.
-const FORCE_WAKE_HINT = wakeParams.has('wakehint');
 
 // __BUILD_TIME__/__BUILD_COMMIT__ are injected at build time (see
 // vite.config.js) so it's obvious on-device whether a stale, cached bundle
@@ -115,19 +110,6 @@ function BuildInfo({ onRefresh, wakeStatus }) {
   );
 }
 
-// Recognition over recall (issue #68 #4): keep-awake in the iOS home-screen
-// web clip can't start its silent video until one real tap (autoplay
-// policy), so until then the screen isn't actually held. Rather than expect
-// the user to remember that rule, surface it — a small pill above the nav
-// that any tap dismisses (the same tap that arms the video).
-function WakeHint() {
-  return (
-    <div className="wake-hint" role="status">
-      Tap anywhere to keep the screen on
-    </div>
-  );
-}
-
 export default function App() {
   const [tab, setTabState] = useState(getInitialTab);
   const [completions, setCompletions] = useState(() => loadCompletions());
@@ -141,7 +123,7 @@ export default function App() {
   // Hold the screen awake while the app is open so the phone doesn't lock
   // mid-exercise (issue #54). The returned status is shown next to the
   // build info so on-device behavior is diagnosable without a debugger.
-  const { status: wakeStatus, needsTap } = useWakeLock();
+  const { status: wakeStatus } = useWakeLock();
   // Initialized from ?ex= so a hard reload (see getInitialExercise) restores
   // the open exercise rather than resetting to the list.
   const [selectedExercise, setSelectedExercise] = useState(getInitialExercise);
@@ -497,8 +479,6 @@ export default function App() {
           closing={detailClosing}
         />
       )}
-
-      {(needsTap || FORCE_WAKE_HINT) && <WakeHint />}
 
       {planPrompt && (
         <PlanAmendmentSheet
