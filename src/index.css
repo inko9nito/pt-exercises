@@ -1707,13 +1707,6 @@ button {
   }
 }
 
-@media (min-width: 640px) {
-  .app {
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-  }
-}
-
 /* ============================================================
    Plan-amendment prompt (issue #53 retro-edit)
    ============================================================ */
