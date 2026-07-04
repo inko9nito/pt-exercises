@@ -4,58 +4,32 @@ import { useEffect, useState } from 'react';
 // mid-exercise (issue #54): you've got the app propped up doing a rep with
 // the dog and the display shouldn't sleep out from under you.
 //
-// Two different mechanisms are used depending on context:
+// Three mechanisms, picked by context. The web-clip choice is the survivor
+// of six on-device rounds on #54 — every alternative below it was tried on
+// the actual phone and failed there, so don't "simplify" back to them:
 //
-//   1. The standard Screen Wake Lock API, everywhere it's actually
-//      trustworthy. It isn't everywhere: it's absent on older iOS
-//      (pre-16.4) and desktop Firefox, so it's feature-guarded and a
-//      missing API just no-ops. It also gets auto-released by the browser
-//      whenever the page stops being visible, so it's re-requested on every
-//      visibilitychange back to visible — the documented way to hold it
-//      across the app's whole lifetime.
+//   1. iOS home-screen web clip (navigator.standalone): the aborted-
+//      navigation hack (runRefreshHack) — the ONLY thing that held the
+//      screen. In the web clip iOS refuses the Wake Lock API outright
+//      (NotAllowedError, report #4), ignores hidden video whether muted
+//      (report #2) or unmuted with a silent audio track (report #3), and
+//      ignores even a VISIBLE unmuted never-ending NoSleep-style video
+//      (report #5). The hack held past auto-lock (report #6).
 //
-//   2. A silent, invisible video, forced specifically for iOS's
-//      home-screen "web clip" apps (navigator.standalone). That's not a
-//      guess: #54 was verified fixed in a regular Safari tab but the screen
-//      still locked in the installed home-screen app, which matches a
-//      known WebKit gap — the Wake Lock API can resolve successfully there
-//      without actually stopping the OS's auto-lock timer.
+//   2. Everywhere else with the standard Screen Wake Lock API: use it.
+//      It auto-releases whenever the page is hidden, so it's re-requested
+//      on every visibilitychange back to visible — the documented way to
+//      hold it across the app's whole lifetime.
 //
-// The video path deliberately copies NoSleep.js's playback scheme instead
-// of a plain <video loop>: iOS treats a short video on a loop as ignorable
-// and lets the screen sleep anyway (the first cut of this fallback looped,
-// and the web clip's screen still locked — issue #54's second report).
-// NoSleep's trick is to never let the mp4 loop or end: every timeupdate
-// past the 0.5s mark seeks back to a random early position, so as far as
-// the OS is concerned one continuous video has been playing the whole
-// time. The sub-second webm (for non-iOS browsers without the native API)
-// does use loop, matching NoSleep.
+//   3. Browsers with neither (old iOS Safari, older desktop Firefox):
+//      NoSleep.js's video scheme — unmuted (silent audio track), mp4 never
+//      loops or ends (timeupdate re-seek), sub-second webm loops. Playback
+//      needs one real tap to arm (autoplay policy), which normal app use
+//      provides.
 //
-// Just as deliberately, the video is NOT muted — that was issue #54's
-// *third* report: "video playing" in the footer and the screen still
-// locked. iOS only counts *audible-eligible* playback toward keeping the
-// screen on; a muted video is decorative no matter how it loops. NoSleep
-// never mutes, and its mp4 carries a silent audio track precisely so
-// unmuted playback registers as real media while producing no sound.
-// Unmuted play() can't start without a user gesture anywhere, so the
-// first tap in the app (marking an exercise, switching tabs) is what
-// arms it — see the pointerdown listener in runVideoFallback.
-//
-// And the video is VISIBLE — a small floating chip above the bottom nav —
-// not a 1×1 transparent pixel. Fourth report: unmuted playback, footer
-// confirming "video playing", screen locked anyway. The remaining
-// difference between us and playback iOS respects was visibility: iOS's
-// media heuristics discount video it considers hidden (offscreen,
-// zero-ish size, opacity 0 — exactly how the chip was styled before).
-// The chip stays on top of everything, including the exercise detail
-// view, since mid-exercise is precisely when the screen must stay on.
-//
-// The hook returns a short status string ("lock held", "video playing",
-// …) that App surfaces next to the build info in the footer — issue #54
-// took several rounds of "did it work on the actual device?" and this
-// makes the answer visible on the phone itself instead of inferred. In
-// the web-clip case both mechanisms run at once (the broken-there native
-// lock is harmless belt-and-braces) and both statuses are shown.
+// The hook returns a short status string ("lock held", "refresh ×3", …)
+// that App shows under the build info — six rounds of "did it work on the
+// actual device?" is why the answer is visible on the phone itself.
 function isIOSStandalone() {
   return typeof navigator !== 'undefined' && navigator.standalone === true;
 }
@@ -65,45 +39,9 @@ export function useWakeLock() {
 
   useEffect(() => {
     if (typeof navigator === 'undefined') return undefined;
-
-    const hasNative = 'wakeLock' in navigator;
-    if (!isIOSStandalone() && hasNative) {
-      return runNativeWakeLock(setStatus);
-    }
-
-    // iOS web clip (or no native API at all): every mechanism runs at once
-    // and every status is shown — five rounds in, the footer readout is the
-    // only ground truth we get from the device, so nothing runs silently.
-    // The native lock is requested even though the web clip refuses it
-    // (NotAllowedError, per on-device report #4) purely so the refusal
-    // stays visible; the video is the NoSleep-style path; the refresh hack
-    // is the last untried trick from the pre-Wake-Lock era (see
-    // runRefreshHack).
-    const parts = { video: '…', lock: hasNative ? '…' : null, refresh: '…' };
-    const compose = () => {
-      setStatus(
-        [parts.video, parts.lock, parts.refresh].filter(Boolean).join(' · ')
-      );
-    };
-    const stopVideo = runVideoFallback((s) => {
-      parts.video = s;
-      compose();
-    });
-    const stopLock = hasNative
-      ? runNativeWakeLock((s) => {
-          parts.lock = s;
-          compose();
-        })
-      : null;
-    const stopRefresh = runRefreshHack((s) => {
-      parts.refresh = s;
-      compose();
-    });
-    return () => {
-      stopVideo();
-      if (stopLock) stopLock();
-      stopRefresh();
-    };
+    if (isIOSStandalone()) return runRefreshHack(setStatus);
+    if ('wakeLock' in navigator) return runNativeWakeLock(setStatus);
+    return runVideoFallback(setStatus);
   }, []);
 
   return status;
@@ -162,15 +100,15 @@ function runNativeWakeLock(setStatus) {
 
 function runVideoFallback(setStatus) {
   const video = document.createElement('video');
-  // NOT muted — see the header comment. The mp4's audio track is silent,
-  // so nothing is audible; unmuted is what makes iOS count the playback.
+  // NOT muted: platforms only count audible-eligible playback toward
+  // keeping the screen on. The mp4's audio track is silent, so nothing is
+  // actually audible.
   video.setAttribute('playsinline', '');
   video.setAttribute('title', 'keep-awake');
-  // Visible on purpose — see the header comment. Small chip floating just
-  // above the bottom nav, out of the way of taps (pointer-events:none)
-  // but genuinely rendered, so iOS can't classify the playback as hidden.
-  // Bottom-LEFT: the footer's refresh button lives on the right, and the
-  // chip sitting on top of it made the button nearly untappable.
+  // Rendered as a small visible chip (bottom-left, clear of the footer's
+  // refresh button, taps pass through) rather than hidden — media
+  // heuristics discount video they consider hidden. Only legacy browsers
+  // without the Wake Lock API ever see this.
   video.style.cssText =
     'position:fixed;left:10px;' +
     'bottom:calc(var(--nav-height, 66px) + env(safe-area-inset-bottom) + 10px);' +
@@ -240,22 +178,20 @@ function runVideoFallback(setStatus) {
   };
 }
 
-// The pre-Wake-Lock-era trick (NoSleep.js's oldIOS() path, and the top
-// answers on the classic StackOverflow thread about iOS 7): every 15s,
+// The web clip's keep-awake mechanism, and the only one that works there
+// (see the header comment for the five failed alternatives). It's the
+// pre-Wake-Lock-era trick from NoSleep.js's oldIOS() path: every 15s,
 // start a navigation to the current URL and cancel it on the next tick
 // with window.stop(). The OS registers the aborted navigation as page
-// activity and resets its idle timer. NoSleep gates this to iOS < 10, but
-// after five failed rounds on #54 (wake lock refused, hidden video
-// ignored, muted video ignored, visible unmuted video ignored) it's the
-// last web-available mechanism left untried in the web clip, so it runs
-// alongside the others rather than being ruled out on age.
+// activity and resets its idle timer. NoSleep gates it to iOS < 10, but
+// on-device report #6 confirmed it still holds the screen on current iOS
+// web clips — where every modern mechanism is refused or ignored.
 //
-// Known risks, accepted for now: the cancelled navigation can abort
-// in-flight fetches (NoSleep's own warning), and if window.stop() ever
-// lands late the page would actually reload — the tab would survive (it's
-// mirrored in ?tab=) but an open exercise detail would close. If this
-// turns out to be the mechanism that finally works, tightening those
-// edges becomes the follow-up.
+// Known risks, accepted knowingly (tracked as a follow-up issue): the
+// cancelled navigation can abort in-flight fetches (NoSleep's own
+// warning), and if window.stop() ever lands late the page actually
+// reloads — the tab survives (it's mirrored in ?tab=) but an open
+// exercise detail would close.
 function runRefreshHack(setStatus) {
   let ticks = 0;
   setStatus('refresh armed');
