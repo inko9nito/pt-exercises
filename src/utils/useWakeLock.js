@@ -57,14 +57,16 @@ import { useEffect, useState } from 'react';
 // the web-clip case all three mechanisms run at once and every status is
 // shown.
 //
-// The video is paused whenever the page is hidden — screen locked or app
-// backgrounded — and resumed when it's visible again (issue #75). Nothing
-// needs keeping awake behind a locked screen, and pausing lets iOS dismiss
-// the "Now Playing" card that unmuted playback otherwise strands on the lock
-// screen (where tapping it opened some other web clip, not this one). While
-// the app is foreground the card is claimed via MediaSession so it reads as,
-// and taps back to, this app. Keep-awake while visible is unchanged — do NOT
-// make the video keep playing through visibility changes or the box returns.
+// The video is fully unloaded whenever the page is hidden — screen locked or
+// app backgrounded — and rebuilt when it's visible again (issue #75). Nothing
+// needs keeping awake behind a locked screen, and merely pausing is not
+// enough: iOS leaves a *paused* "Now Playing" card stranded on the lock
+// screen (verified on-device — the card stayed, just switched to its play
+// button). The media has to be unloaded outright — no loaded media, no card.
+// While the app is foreground the card is claimed via MediaSession so it
+// reads as, and taps back to, this app. Keep-awake while visible is
+// unchanged — do NOT let the video survive visibility changes or the box
+// comes back.
 //
 // DO NOT "simplify" the web clip down to a subset of the three. This
 // exact all-three configuration is the only one that has ever held the
@@ -216,7 +218,10 @@ function runVideoFallback(setStatus, onActive = () => {}) {
   // NOT muted — see the header comment. The mp4's audio track is silent,
   // so nothing is audible; unmuted is what makes iOS count the playback.
   video.setAttribute('playsinline', '');
-  video.setAttribute('title', 'keep-awake');
+  // If iOS ever falls back to the element's own title for the Now Playing
+  // card (e.g. a frame before MediaSession metadata lands), it should still
+  // read as the app rather than a bare "keep-awake".
+  video.setAttribute('title', "Domino's PT Exercises");
   // Visible on purpose — see the header comment. Rendered as a 1px-tall
   // hairline spanning the full width, sitting at the seam just above the
   // bottom nav (issue #72), so the playback iOS requires reads as the app's
@@ -238,15 +243,22 @@ function runVideoFallback(setStatus, onActive = () => {}) {
     'opacity:0.9;z-index:100;pointer-events:none;';
 
   const base = import.meta.env.BASE_URL;
-  for (const [file, type] of [
-    ['nosleep.webm', 'video/webm'],
-    ['nosleep.mp4', 'video/mp4'],
-  ]) {
-    const source = document.createElement('source');
-    source.src = `${base}${file}`;
-    source.type = type;
-    video.appendChild(source);
-  }
+  // Split out so the media can be torn all the way down while the app is
+  // hidden and rebuilt on return (see arm/disarm). Idempotent — skips if the
+  // sources are already attached, so re-arming taps don't stack duplicates.
+  const loadSources = () => {
+    if (video.querySelector('source')) return;
+    for (const [file, type] of [
+      ['nosleep.webm', 'video/webm'],
+      ['nosleep.mp4', 'video/mp4'],
+    ]) {
+      const source = document.createElement('source');
+      source.src = `${base}${file}`;
+      source.type = type;
+      video.appendChild(source);
+    }
+    video.load();
+  };
 
   // Own the OS "Now Playing" card while the video is what's keeping the
   // screen awake (issue #75). Claiming it with metadata makes the card
@@ -280,12 +292,15 @@ function runVideoFallback(setStatus, onActive = () => {}) {
   // never loop or end — see the header comment. duration <= 1 tells the
   // two apart without caring which source the browser picked.
   video.addEventListener('loadedmetadata', () => {
-    if (video.duration <= 1) {
-      video.setAttribute('loop', '');
-    } else {
-      video.addEventListener('timeupdate', () => {
-        if (video.currentTime > 0.5) video.currentTime = Math.random();
-      });
+    if (video.duration <= 1) video.setAttribute('loop', '');
+  });
+  // Registered once up front rather than inside loadedmetadata: after an
+  // unload/reload (disarm → arm) loadedmetadata fires again, and nesting the
+  // listener there would stack a fresh copy on every lock/unlock. The
+  // duration guard keeps it a no-op for the sub-second webm, which loops.
+  video.addEventListener('timeupdate', () => {
+    if (video.duration > 1 && video.currentTime > 0.5) {
+      video.currentTime = Math.random();
     }
   });
 
@@ -324,31 +339,47 @@ function runVideoFallback(setStatus, onActive = () => {}) {
     video.play().catch(() => {});
   };
 
-  // Autoplay policies block the first play() until a real user gesture —
-  // the app has plenty of taps, so just retry on the next one. Left
-  // attached (rather than removed after first success) so playback also
-  // recovers if the OS pauses it for some other reason.
-  document.addEventListener('pointerdown', play);
-  // Visible: (re)start playback so the screen stays awake. Hidden (screen
-  // locked or app backgrounded): pause — there's nothing to keep awake, and
-  // pausing lets the Now Playing card be dismissed rather than stranded on
-  // the lock screen (issue #75). Returning to visible resumes without
-  // resetting currentTime, so keep-awake picks straight back up.
+  // Bring keep-awake up: make sure the media is loaded, then play.
+  const arm = () => {
+    if (cancelled) return;
+    loadSources();
+    play();
+  };
+  // Take it fully down while the app is hidden. Pausing alone leaves a paused
+  // Now Playing card on the lock screen (issue #75), so the media is unloaded
+  // outright — with nothing loaded there's no card. currentTime resetting is
+  // fine: nothing needs keeping awake behind a lock, and arm() rebuilds it on
+  // return.
+  const disarm = () => {
+    video.pause();
+    while (video.firstChild) video.removeChild(video.firstChild);
+    video.removeAttribute('src');
+    video.load();
+    clearSession();
+  };
+
+  // Autoplay policies block the first play() until a real user gesture — the
+  // app has plenty of taps, so just retry on the next one. Left attached
+  // (rather than removed after first success) so playback also recovers after
+  // the disarm/arm cycle below or if the OS pauses it for some other reason.
+  document.addEventListener('pointerdown', arm);
+  // Visible: (re)arm so the screen stays awake. Hidden (screen locked or app
+  // backgrounded): tear the video down so its Now Playing card leaves the
+  // lock screen — keep-awake is pointless behind a lock anyway (issue #75).
   const onVisibilityChange = () => {
-    if (document.visibilityState === 'visible') play();
-    else video.pause();
+    if (document.visibilityState === 'visible') arm();
+    else disarm();
   };
   document.addEventListener('visibilitychange', onVisibilityChange);
 
-  play();
+  arm();
 
   return () => {
     cancelled = true;
-    document.removeEventListener('pointerdown', play);
+    document.removeEventListener('pointerdown', arm);
     document.removeEventListener('visibilitychange', onVisibilityChange);
-    video.pause();
+    disarm();
     video.remove();
-    clearSession();
   };
 }
 
