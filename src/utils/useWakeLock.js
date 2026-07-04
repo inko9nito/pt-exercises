@@ -210,16 +210,22 @@ function runVideoFallback(setStatus, onActive = () => {}) {
   video.setAttribute('title', 'keep-awake');
   // Visible on purpose — see the header comment. Rendered as a 1px-tall
   // hairline spanning the full width, sitting at the seam just above the
-  // bottom nav (issue #72), so the playback iOS requires reads as a subtle
-  // divider instead of a black box. Still genuinely on-screen and opaque —
-  // NOT hidden/zero-size/opacity-0, which #54 proved iOS ignores. If a 1px
-  // line turns out to be too small for iOS to count (screen sleeps again),
-  // increase the height until it holds. pointer-events:none so it never
-  // eats a tap.
+  // bottom nav (issue #72), so the playback iOS requires reads as the app's
+  // own divider rather than a black box. Still genuinely on-screen and
+  // opaque — NOT hidden/zero-size/opacity-0, which #54 proved iOS ignores.
+  //
+  // The source video is solid black, so `invert(1) brightness(0.9)` repaints
+  // it to ~#E6E6E6, matching the divider colour sampled from the app
+  // (--border, #E5E1D6). filter only affects paint — size, opacity and
+  // playback are unchanged, so it doesn't touch what iOS counts for
+  // keep-awake. If a 1px line ever turns out too small for iOS to count
+  // (screen sleeps again), increasing the height is the one knob.
+  // pointer-events:none so it never eats a tap.
   video.style.cssText =
     'position:fixed;left:0;right:0;' +
     'bottom:calc(var(--nav-height, 66px) + env(safe-area-inset-bottom));' +
     'width:100%;height:1px;object-fit:cover;' +
+    'filter:invert(1) brightness(0.9);' +
     'opacity:0.9;z-index:100;pointer-events:none;';
 
   const base = import.meta.env.BASE_URL;
