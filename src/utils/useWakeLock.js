@@ -71,15 +71,18 @@ export function useWakeLock() {
       return runNativeWakeLock(setStatus);
     }
 
-    // iOS web clip (or no native API at all): the video trick is the real
-    // mechanism. In the web clip the native lock is requested too — it
-    // hasn't held the screen there in practice, but it costs nothing and
-    // showing both statuses tells the next on-device report exactly what
-    // each mechanism thought it was doing.
-    const parts = { video: '…', lock: hasNative ? '…' : null };
+    // iOS web clip (or no native API at all): every mechanism runs at once
+    // and every status is shown — five rounds in, the footer readout is the
+    // only ground truth we get from the device, so nothing runs silently.
+    // The native lock is requested even though the web clip refuses it
+    // (NotAllowedError, per on-device report #4) purely so the refusal
+    // stays visible; the video is the NoSleep-style path; the refresh hack
+    // is the last untried trick from the pre-Wake-Lock era (see
+    // runRefreshHack).
+    const parts = { video: '…', lock: hasNative ? '…' : null, refresh: '…' };
     const compose = () => {
       setStatus(
-        parts.lock === null ? parts.video : `${parts.video} · ${parts.lock}`
+        [parts.video, parts.lock, parts.refresh].filter(Boolean).join(' · ')
       );
     };
     const stopVideo = runVideoFallback((s) => {
@@ -92,9 +95,14 @@ export function useWakeLock() {
           compose();
         })
       : null;
+    const stopRefresh = runRefreshHack((s) => {
+      parts.refresh = s;
+      compose();
+    });
     return () => {
       stopVideo();
       if (stopLock) stopLock();
+      stopRefresh();
     };
   }, []);
 
@@ -227,5 +235,36 @@ function runVideoFallback(setStatus) {
     document.removeEventListener('visibilitychange', onVisibilityChange);
     video.pause();
     video.remove();
+  };
+}
+
+// The pre-Wake-Lock-era trick (NoSleep.js's oldIOS() path, and the top
+// answers on the classic StackOverflow thread about iOS 7): every 15s,
+// start a navigation to the current URL and cancel it on the next tick
+// with window.stop(). The OS registers the aborted navigation as page
+// activity and resets its idle timer. NoSleep gates this to iOS < 10, but
+// after five failed rounds on #54 (wake lock refused, hidden video
+// ignored, muted video ignored, visible unmuted video ignored) it's the
+// last web-available mechanism left untried in the web clip, so it runs
+// alongside the others rather than being ruled out on age.
+//
+// Known risks, accepted for now: the cancelled navigation can abort
+// in-flight fetches (NoSleep's own warning), and if window.stop() ever
+// lands late the page would actually reload — the tab would survive (it's
+// mirrored in ?tab=) but an open exercise detail would close. If this
+// turns out to be the mechanism that finally works, tightening those
+// edges becomes the follow-up.
+function runRefreshHack(setStatus) {
+  let ticks = 0;
+  setStatus('refresh armed');
+  const timer = window.setInterval(() => {
+    if (document.hidden) return;
+    window.location.href = window.location.href.split('#')[0];
+    window.setTimeout(() => window.stop(), 0);
+    ticks += 1;
+    setStatus(`refresh ×${ticks}`);
+  }, 15000);
+  return () => {
+    window.clearInterval(timer);
   };
 }
