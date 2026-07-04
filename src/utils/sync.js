@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
-import { normalizeCompletions, loadCompletions } from './tracker.js';
+import { normalizeCompletions, loadCompletions, normalizePlans } from './tracker.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyD-CxVuiQ4k94KKixh4y8iPHRxlODCXY24',
@@ -15,11 +15,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const completionsRef = ref(db, 'completions');
+const plansRef = ref(db, 'plans');
 
 export function subscribeToCompletions(onChange) {
   return onValue(completionsRef, (snapshot) => {
     onChange(normalizeCompletions(snapshot.val()));
   });
+}
+
+// Plan snapshots (issue #53), a sibling node to `completions`. Same
+// subscribe-and-mirror model; writes are scoped to the one day's path
+// (`plans/YYYY-MM-DD`) so filling a snapshot never rewrites the whole tree.
+// Unlike completions, plan writes need no pending-write safeguard: a lost
+// write just leaves that day missing, and missingPlanDays re-computes and
+// re-writes it (identically) on the next load.
+export function subscribeToPlans(onChange) {
+  return onValue(plansRef, (snapshot) => {
+    onChange(normalizePlans(snapshot.val()));
+  });
+}
+
+export function pushDayPlan(dateKey, plan) {
+  return set(ref(db, `plans/${dateKey}`), plan);
 }
 
 // A write is "pending" from the moment it's issued until Firebase acks it.

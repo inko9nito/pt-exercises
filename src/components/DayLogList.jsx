@@ -2,50 +2,58 @@ import { memo } from 'react';
 import { CheckBadgeIcon, ChevronRightIcon, StarIcon } from './Icons.jsx';
 import { exerciseById } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
-import { isScheduledOn } from '../utils/tracker.js';
 
-// Shared "what happened on this day" card list, used by both the week
-// strip's past-day view (DailyView) and the Progress calendar's day-detail
-// (ProgressView) so the two never drift apart. `cards`/`date` are only ever
-// new references when the selected day (or its data) actually changes — see
-// the groupDayCards useMemo in each caller — so the default shallow prop
-// comparison is enough to skip re-rendering on unrelated parent re-renders.
-function DayLogList({ cards, date, completions, onOpenExercise, emptyMessage }) {
-  if (cards.length === 0) {
+// Shared "what happened on this day" list, used by both the week strip's
+// past-day view (DailyView) and the Progress calendar's day-detail
+// (ProgressView) so the two never drift apart. Entries come from
+// getDayEntries and include the day's *planned* exercises (done or missed)
+// alongside any extra sessions — so a past day reads like the Today view
+// rather than only showing what was logged (issue #53). `entries`/`date` are
+// only new references when the selected day (or its data) actually changes —
+// see the useMemo in each caller — so the default shallow prop comparison is
+// enough to skip re-rendering on unrelated parent re-renders.
+function DayLogList({ entries, date, onOpenExercise, emptyMessage }) {
+  if (entries.length === 0) {
     return <p className="day-detail-empty">{emptyMessage}</p>;
   }
 
   return (
     <div className="row-group">
-      {cards.map((card) => {
-        const ex = exerciseById.get(card.id);
+      {entries.map((entry) => {
+        const ex = exerciseById.get(entry.id);
         if (!ex) return null;
-        // "Extra" = wasn't on that specific day's plan (optional or logged as
-        // an unscheduled add) — same rule as today's Completed section, but
-        // evaluated for the day this card belongs to.
-        const extra = !isScheduledOn(ex, completions, date);
         return (
-          <button key={card.id} className="exercise-row" onClick={() => onOpenExercise?.(ex, date)}>
+          <button
+            key={entry.id}
+            className={`exercise-row ${entry.done ? '' : 'is-missed'}`}
+            onClick={() => onOpenExercise?.(ex, date)}
+          >
             <span className="row-thumb">
               <img src={assetUrl(ex.images[0])} alt="" loading="lazy" />
             </span>
             <span className="row-body">
-              <span className="row-name">{ex.name}</span>
+              <span className="row-name">{entry.name}</span>
               <span className="row-meta">
-                {card.times.length > 1
-                  ? `${card.times.length}× · ${card.times.join(', ')}`
-                  : `Done ${card.times[0]}`}
+                {entry.done
+                  ? entry.times.length > 1
+                    ? `${entry.times.length}× · ${entry.times.join(', ')}`
+                    : `Done ${entry.times[0]}`
+                  : entry.freqLabel}
               </span>
             </span>
-            {extra && (
+            {entry.extra && (
               <span className="row-extra-badge">
                 <StarIcon size={11} />
                 Extra
               </span>
             )}
-            <span className="row-status-check">
-              <CheckBadgeIcon size={21} />
-            </span>
+            {entry.done ? (
+              <span className="row-status-check">
+                <CheckBadgeIcon size={21} />
+              </span>
+            ) : (
+              <span className="row-status-missed">Missed</span>
+            )}
             <span className="row-chevron">
               <ChevronRightIcon size={18} />
             </span>

@@ -6,11 +6,10 @@ import AddExerciseSheet from './AddExerciseSheet.jsx';
 import { CheckIcon, PlusIcon } from './Icons.jsx';
 import { exercises } from '../data/exercises.js';
 import { formatDateLong } from '../utils/format.js';
-import { getDaysOverdue, isScheduledToday, dateKey, groupDayCards } from '../utils/tracker.js';
+import { getDaysOverdue, isExtraOn, dateKey, getDayEntries } from '../utils/tracker.js';
 
-export default function DailyView({ completions, todayModel, onOpenExercise, onLogForDate }) {
+export default function DailyView({ completions, plans, todayModel, onOpenExercise, onLogForDate }) {
   const {
-    dateMap,
     due,
     laterToday,
     optional,
@@ -34,15 +33,15 @@ export default function DailyView({ completions, todayModel, onOpenExercise, onL
     day: 'numeric',
   });
 
-  // Group that day's sessions by exercise so each renders as a single card
-  // (like today's list) carrying the time(s) it was done, rather than one
-  // text line per session.
-  const selectedDayCards = useMemo(() => {
-    if (isViewingToday) return null;
-    return groupDayCards(dateMap, selectedDate);
-  }, [isViewingToday, dateMap, selectedDate]);
-
   const selectedDateObj = useMemo(() => new Date(`${selectedDate}T12:00:00`), [selectedDate]);
+
+  // That day's planned exercises (done or missed) plus any extra sessions, so
+  // a past day reads like the Today list rather than showing only what was
+  // logged (issue #53).
+  const selectedDayEntries = useMemo(() => {
+    if (isViewingToday) return null;
+    return getDayEntries(exercises, completions, plans, selectedDateObj);
+  }, [isViewingToday, completions, plans, selectedDateObj]);
 
   return (
     <div className="daily-view">
@@ -52,17 +51,17 @@ export default function DailyView({ completions, todayModel, onOpenExercise, onL
         weekOffset={weekOffset}
         onWeekChange={setWeekOffset}
         completions={completions}
+        plans={plans}
       />
 
       {!isViewingToday ? (
         <div className="day-detail-view">
           <p className="day-detail-title">{formatDateLong(selectedDate)}</p>
           <DayLogList
-            cards={selectedDayCards}
+            entries={selectedDayEntries}
             date={selectedDateObj}
-            completions={completions}
             onOpenExercise={onOpenExercise}
-            emptyMessage="Nothing logged this day."
+            emptyMessage="Nothing planned or logged this day."
           />
 
           <button className="add-exercise-btn" onClick={() => setShowAddSheet(true)}>
@@ -162,7 +161,7 @@ export default function DailyView({ completions, todayModel, onOpenExercise, onL
                     exercise={ex}
                     completions={completions}
                     onOpen={onOpenExercise}
-                    extra={!isScheduledToday(ex, completions)}
+                    extra={isExtraOn(ex, completions, today, plans)}
                   />
                 ))}
               </div>
