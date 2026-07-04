@@ -18,7 +18,7 @@ import {
 // once in App, which persists across tab switches, so navigating between
 // tabs doesn't force a fresh walk over `exercises` each time — only an
 // actual `completions` change does.
-export function useTodayModel(completions) {
+export function useTodayModel(completions, plans) {
   // Due/optional/not-due status is only meaningful for today — a past day's
   // view just shows what was actually logged then, which is what this
   // grouping is for.
@@ -78,8 +78,8 @@ export function useTodayModel(completions) {
   // read — computed once here instead of separately in each view, so the
   // two can't disagree about how much of today is "done".
   const { planTotal, planDone, bonusDone } = useMemo(
-    () => getPlanProgress(exercises, completions),
-    [completions]
+    () => getPlanProgress(exercises, completions, plans),
+    [completions, plans]
   );
 
   // Exercises whose schedule doesn't put them on today's page at all (e.g.

@@ -6,9 +6,9 @@ import AddExerciseSheet from './AddExerciseSheet.jsx';
 import { CheckIcon, PlusIcon } from './Icons.jsx';
 import { exercises } from '../data/exercises.js';
 import { formatDateLong } from '../utils/format.js';
-import { getDaysOverdue, isScheduledToday, dateKey, groupDayCards } from '../utils/tracker.js';
+import { getDaysOverdue, isExtraOn, dateKey, groupDayCards } from '../utils/tracker.js';
 
-export default function DailyView({ completions, todayModel, onOpenExercise, onLogForDate }) {
+export default function DailyView({ completions, plans, todayModel, onOpenExercise, onLogForDate }) {
   const {
     dateMap,
     due,
@@ -52,6 +52,7 @@ export default function DailyView({ completions, todayModel, onOpenExercise, onL
         weekOffset={weekOffset}
         onWeekChange={setWeekOffset}
         completions={completions}
+        plans={plans}
       />
 
       {!isViewingToday ? (
@@ -61,6 +62,7 @@ export default function DailyView({ completions, todayModel, onOpenExercise, onL
             cards={selectedDayCards}
             date={selectedDateObj}
             completions={completions}
+            plans={plans}
             onOpenExercise={onOpenExercise}
             emptyMessage="Nothing logged this day."
           />
@@ -162,7 +164,7 @@ export default function DailyView({ completions, todayModel, onOpenExercise, onL
                     exercise={ex}
                     completions={completions}
                     onOpen={onOpenExercise}
-                    extra={!isScheduledToday(ex, completions)}
+                    extra={isExtraOn(ex, completions, today, plans)}
                   />
                 ))}
               </div>

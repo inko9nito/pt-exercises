@@ -16,6 +16,12 @@ import {
   getSessionsOn,
   countSessionsOn,
   shouldTrustRemoteSnapshot,
+  dateKey,
+  planTarget,
+  buildPlanSnapshot,
+  missingPlanDays,
+  isExtraOn,
+  normalizePlans,
 } from './tracker.js';
 
 // Thursday, fixed so every "today"/"days ago" calculation below is
@@ -405,5 +411,153 @@ describe('shouldTrustRemoteSnapshot', () => {
 
   it('accepts a non-empty snapshot once trust has already been established', () => {
     expect(shouldTrustRemoteSnapshot({ '1': [daysAgoISO(0)] }, true)).toBe(true);
+  });
+});
+
+// Plan snapshots (issue #53): a day's prescribed plan is a stored record, so
+// past days stop being re-interpreted under today's frequency rules.
+describe('planTarget', () => {
+  it('is 1 for daily/interval, the cap for multiple-daily, the target for hourly', () => {
+    expect(planTarget(dailyEx)).toBe(1);
+    expect(planTarget(everyOtherDayEx)).toBe(1);
+    expect(planTarget(multipleDailyEx)).toBe(3);
+    expect(planTarget(hourlyEx)).toBe(8);
+  });
+});
+
+describe('buildPlanSnapshot', () => {
+  it('includes every scheduled exercise with its target and excludes as-needed', () => {
+    const snap = buildPlanSnapshot(
+      [dailyEx, multipleDailyEx, hourlyEx, asNeededEx],
+      {},
+      NOW,
+      'live'
+    );
+    expect(snap.exercises).toEqual({
+      '1': { target: 1 },
+      '6': { target: 3 },
+      '7': { target: 8 },
+    });
+    expect(snap.amendments).toEqual({});
+    expect(snap.source).toBe('live');
+    expect(snap.createdAt).toBeTruthy();
+  });
+});
+
+describe('getPlanProgressOn with a stored snapshot', () => {
+  const key = dateKey(NOW);
+
+  it('reads the plan from the snapshot instead of reconstructing', () => {
+    // Reconstruction would say everyOtherDay is scheduled today (no history),
+    // but the recorded snapshot says nothing was planned — so a session that
+    // day is bonus, not plan.
+    const completions = { '3': [NOW.toISOString()] };
+    const plans = { [key]: { exercises: {}, amendments: {}, source: 'live' } };
+    expect(getPlanProgressOn([everyOtherDayEx], completions, NOW, plans)).toEqual({
+      planTotal: 0,
+      planDone: 0,
+      bonusDone: 1,
+    });
+    // Same inputs without a snapshot fall back to reconstruction.
+    expect(getPlanProgressOn([everyOtherDayEx], completions, NOW)).toEqual({
+      planTotal: 1,
+      planDone: 1,
+      bonusDone: 0,
+    });
+  });
+
+  it('counts a planned exercise as done only once it has a session that day', () => {
+    const plans = { [key]: { exercises: { '1': { target: 1 } }, amendments: {} } };
+    expect(getPlanProgressOn([dailyEx], {}, NOW, plans)).toMatchObject({
+      planTotal: 1,
+      planDone: 0,
+    });
+    expect(
+      getPlanProgressOn([dailyEx], { '1': [NOW.toISOString()] }, NOW, plans)
+    ).toMatchObject({ planTotal: 1, planDone: 1 });
+  });
+
+  it('skips a snapshot id that is no longer in the exercise library', () => {
+    const plans = { [key]: { exercises: { '999': { target: 1 } }, amendments: {} } };
+    expect(getPlanProgressOn([dailyEx], {}, NOW, plans)).toEqual({
+      planTotal: 0,
+      planDone: 0,
+      bonusDone: 0,
+    });
+  });
+
+  it('drops a postponed exercise from the plan denominator (schema room for #27)', () => {
+    const plans = {
+      [key]: {
+        exercises: { '1': { target: 1 } },
+        amendments: { postponed: { '1': '2026-07-03' } },
+      },
+    };
+    expect(getPlanProgressOn([dailyEx], {}, NOW, plans)).toEqual({
+      planTotal: 0,
+      planDone: 0,
+      bonusDone: 0,
+    });
+  });
+});
+
+describe('isExtraOn', () => {
+  const key = dateKey(NOW);
+
+  it('uses the snapshot when present', () => {
+    const plans = { [key]: { exercises: { '1': { target: 1 } }, amendments: {} } };
+    expect(isExtraOn(dailyEx, {}, NOW, plans)).toBe(false); // planned → not extra
+    expect(isExtraOn(everyOtherDayEx, {}, NOW, plans)).toBe(true); // not planned → extra
+  });
+
+  it('falls back to reconstruction with no snapshot', () => {
+    // as-needed is never scheduled, so a session is always extra.
+    expect(isExtraOn(asNeededEx, {}, NOW)).toBe(true);
+    expect(isExtraOn(dailyEx, {}, NOW)).toBe(false);
+  });
+});
+
+describe('missingPlanDays', () => {
+  it('lists earliest-completion..yesterday plus today, minus existing snapshots', () => {
+    const completions = { '1': [daysAgoISO(2), daysAgoISO(0)] };
+    const days = missingPlanDays(completions, {}, NOW);
+    expect(days).toEqual([
+      dateKey(new Date(daysAgoISO(2))),
+      dateKey(new Date(daysAgoISO(1))), // gap day with no session still needs a plan
+      dateKey(NOW),
+    ]);
+  });
+
+  it('returns only today when there is no history', () => {
+    expect(missingPlanDays({}, {}, NOW)).toEqual([dateKey(NOW)]);
+  });
+
+  it('is idempotent once every day already has a snapshot', () => {
+    const completions = { '1': [daysAgoISO(1), daysAgoISO(0)] };
+    const plans = {};
+    for (const k of missingPlanDays(completions, {}, NOW)) {
+      plans[k] = { exercises: {}, amendments: {}, source: 'backfilled' };
+    }
+    expect(missingPlanDays(completions, plans, NOW)).toEqual([]);
+  });
+});
+
+describe('normalizePlans', () => {
+  it('fills default exercises/amendments and drops malformed entries', () => {
+    const raw = {
+      '2026-07-01': { source: 'backfilled', createdAt: 'x' }, // Firebase dropped empty objects
+      '2026-07-02': { exercises: { '1': { target: 1 } } },
+      '2026-07-03': null,
+    };
+    const out = normalizePlans(raw);
+    expect(out['2026-07-01']).toEqual({
+      exercises: {},
+      amendments: {},
+      source: 'backfilled',
+      createdAt: 'x',
+    });
+    expect(out['2026-07-02'].amendments).toEqual({});
+    expect(out['2026-07-02'].source).toBe('live'); // default when absent
+    expect(out['2026-07-03']).toBeUndefined();
   });
 });

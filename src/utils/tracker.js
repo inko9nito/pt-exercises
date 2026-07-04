@@ -1,6 +1,7 @@
 import { FREQ } from '../data/exercises.js';
 
 const STORAGE_KEY = 'domino_completions';
+const PLANS_STORAGE_KEY = 'domino_plans';
 
 // Firebase RTDB can hand back null for a per-exercise history that's been
 // emptied out entirely (e.g. every session for it was undone) rather than
@@ -38,6 +39,110 @@ export function loadCompletions() {
 
 export function saveCompletions(completions) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(completions));
+}
+
+// ── Plan snapshots (issue #53) ───────────────────────────────────────────
+// A `plans` object mirrors `completions`: keyed by 'YYYY-MM-DD', each value is
+// a stored record of what was *prescribed* that day, so past days stop being
+// re-interpreted under today's frequency rules. Shape:
+//   { exercises: { [id]: { target } }, amendments: {}, source, createdAt }
+// Firebase RTDB drops empty objects, so a day with nothing scheduled comes
+// back without an `exercises` key — normalizePlans fills the defaults back in.
+export function normalizePlans(raw) {
+  const out = {};
+  for (const [key, plan] of Object.entries(raw || {})) {
+    if (!plan || typeof plan !== 'object') continue;
+    out[key] = {
+      exercises:
+        plan.exercises && typeof plan.exercises === 'object' ? plan.exercises : {},
+      amendments:
+        plan.amendments && typeof plan.amendments === 'object' ? plan.amendments : {},
+      source: plan.source || 'live',
+      createdAt: plan.createdAt || '',
+    };
+  }
+  return out;
+}
+
+export function loadPlans() {
+  try {
+    const raw = localStorage.getItem(PLANS_STORAGE_KEY);
+    return normalizePlans(raw ? JSON.parse(raw) : {});
+  } catch {
+    return {};
+  }
+}
+
+export function savePlans(plans) {
+  localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(plans));
+}
+
+// A local Date at noon for a 'YYYY-MM-DD' key — noon so day arithmetic never
+// trips over a DST boundary.
+export function dateFromKey(key) {
+  return new Date(`${key}T12:00:00`);
+}
+
+// Sessions prescribed for a single day: 1 for daily/interval/eod, the daily
+// cap for multiple-daily, the daily target for hourly. Stored per-exercise in
+// a snapshot (feeds x/N badges); the ring denominator still counts exercises,
+// not sessions, so the plan-vs-bonus ring math is unchanged.
+export function planTarget(exercise) {
+  switch (exercise.freqType) {
+    case FREQ.MULTIPLE_DAILY:
+      return exercise.maxPerDay || 3;
+    case FREQ.HOURLY:
+      return exercise.dailyTarget || 1;
+    default:
+      return 1;
+  }
+}
+
+// Compute the plan snapshot for `date` from the current history, using the
+// same isScheduledOn semantics the rings used to reconstruct live. `source`
+// is 'live' (today's write-once snapshot) or 'backfilled' (a past day filled
+// in retroactively). amendments starts empty — schema room for #27.
+export function buildPlanSnapshot(exercises, completions, date, source) {
+  const exMap = {};
+  for (const ex of exercises) {
+    if (isScheduledOn(ex, completions, date)) {
+      exMap[String(ex.id)] = { target: planTarget(ex) };
+    }
+  }
+  return {
+    exercises: exMap,
+    amendments: {},
+    source,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// Every day from the earliest completion through yesterday, plus today, that
+// has no stored snapshot yet. One code path serves both the one-time backfill
+// and lazy fill of any gap day the app wasn't opened on; checking existence
+// keeps it write-once and idempotent.
+export function missingPlanDays(completions, plans, today = new Date()) {
+  const plansObj = plans || {};
+  const todayKey = dateKey(today);
+  const days = [];
+
+  let earliest = null;
+  for (const arr of Object.values(completions)) {
+    for (const iso of arr || []) {
+      const k = dateKey(new Date(iso));
+      if (earliest === null || k < earliest) earliest = k;
+    }
+  }
+  if (earliest !== null) {
+    const cursor = dateFromKey(earliest);
+    while (dateKey(cursor) < todayKey) {
+      const k = dateKey(cursor);
+      if (!plansObj[k]) days.push(k);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }
+  if (!plansObj[todayKey]) days.push(todayKey);
+  return days;
 }
 
 export function markDone(completions, exerciseId) {
@@ -309,7 +414,16 @@ export function isScheduledToday(exercise, completions) {
 //                or unscheduled/"logged another"), surfaced separately so
 //                extra work is visible without silently papering over a
 //                skipped scheduled exercise.
-export function getPlanProgressOn(exercises, completions, date) {
+// When a stored snapshot exists for the day, the plan is read from it (a
+// recorded fact) instead of reconstructed — so an exercise's frequency
+// changing, or a new exercise being added, no longer rewrites what past days
+// were "supposed" to be. Days without a snapshot (pre-#53 history not yet
+// backfilled, or a wiped remote) fall back to live reconstruction, identical
+// to the old behavior. Passing no `plans` is also a valid fallback.
+export function getPlanProgressOn(exercises, completions, date, plans) {
+  const snap = plans && plans[dateKey(date)];
+  if (snap) return planProgressFromSnapshot(exercises, completions, date, snap);
+
   let planTotal = 0;
   let planDone = 0;
   let bonusDone = 0;
@@ -325,8 +439,47 @@ export function getPlanProgressOn(exercises, completions, date) {
   return { planTotal, planDone, bonusDone };
 }
 
-export function getPlanProgress(exercises, completions) {
-  return getPlanProgressOn(exercises, completions, new Date());
+function planProgressFromSnapshot(exercises, completions, date, snap) {
+  const known = new Set(exercises.map((e) => String(e.id)));
+  // amendments.postponed (schema room for #27) removes an exercise from the
+  // day's plan denominator; none exist yet.
+  const postponed = (snap.amendments && snap.amendments.postponed) || {};
+  const plannedIds = new Set();
+  let planTotal = 0;
+  let planDone = 0;
+  for (const id of Object.keys(snap.exercises || {})) {
+    // Skip an id that's since been removed from the exercise library — it
+    // can't be rendered or completed, so it shouldn't sit in a day's
+    // denominator forever.
+    if (!known.has(id) || postponed[id]) continue;
+    plannedIds.add(id);
+    planTotal += 1;
+    if (doneOn(completions[id] || [], date)) planDone += 1;
+  }
+  let bonusDone = 0;
+  for (const ex of exercises) {
+    const id = String(ex.id);
+    if (plannedIds.has(id)) continue;
+    if (doneOn(completions[id] || [], date)) bonusDone += 1;
+  }
+  return { planTotal, planDone, bonusDone };
+}
+
+export function getPlanProgress(exercises, completions, plans) {
+  return getPlanProgressOn(exercises, completions, new Date(), plans);
+}
+
+// Whether a session on `date` was "extra" (not on that day's plan) — drives
+// the Extra badge. Reads the stored snapshot when present, else falls back to
+// live reconstruction, matching getPlanProgressOn.
+export function isExtraOn(exercise, completions, date, plans) {
+  const snap = plans && plans[dateKey(date)];
+  if (snap) {
+    const postponed = (snap.amendments && snap.amendments.postponed) || {};
+    const id = String(exercise.id);
+    return !(snap.exercises && snap.exercises[id] && !postponed[id]);
+  }
+  return !isScheduledOn(exercise, completions, date);
 }
 
 // How many days past its due date a currently-due exercise is (0 = due today

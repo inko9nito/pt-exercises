@@ -7,7 +7,7 @@ import { exercises } from '../data/exercises.js';
 import { formatDateLong } from '../utils/format.js';
 import { getTotalSessions, getStreak, getPlanProgressOn, groupDayCards } from '../utils/tracker.js';
 
-export default function ProgressView({ completions, todayModel, onOpenExercise }) {
+export default function ProgressView({ completions, plans, todayModel, onOpenExercise }) {
   const { dateMap, planTotal, planDone, bonusDone } = todayModel;
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -22,9 +22,9 @@ export default function ProgressView({ completions, todayModel, onOpenExercise }
     if (!selectedDate) return null;
     const cards = groupDayCards(dateMap, selectedDate);
     const date = new Date(`${selectedDate}T12:00:00`);
-    const { planTotal: pt, planDone: pd, bonusDone: bd } = getPlanProgressOn(exercises, completions, date);
+    const { planTotal: pt, planDone: pd, bonusDone: bd } = getPlanProgressOn(exercises, completions, date, plans);
     return { cards, date, planTotal: pt, planDone: pd, bonusDone: bd };
-  }, [selectedDate, dateMap, completions]);
+  }, [selectedDate, dateMap, completions, plans]);
 
   return (
     <div className="progress-view">
@@ -72,6 +72,7 @@ export default function ProgressView({ completions, todayModel, onOpenExercise }
             cards={day.cards}
             date={day.date}
             completions={completions}
+            plans={plans}
             onOpenExercise={onOpenExercise}
             emptyMessage="No exercises logged this day."
           />

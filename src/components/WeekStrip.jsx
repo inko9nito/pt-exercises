@@ -50,7 +50,7 @@ function WeekDay({ dateKeyValue, label, dayNumber, isToday, isSelected, planTota
 
 const MemoWeekDay = memo(WeekDay);
 
-export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions }) {
+export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions, plans }) {
   const todayKey = dateKey(new Date());
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
 
@@ -69,7 +69,7 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
         // started. Bonus/extra work can't fill the ring (that's the
         // non-fungible plan-vs-bonus rule), so it gets its own corner dot so
         // a day with extra sessions doesn't look identical to an empty one.
-        const { planTotal, planDone, bonusDone } = getPlanProgressOn(exercises, completions, date);
+        const { planTotal, planDone, bonusDone } = getPlanProgressOn(exercises, completions, date, plans);
 
         return (
           <MemoWeekDay

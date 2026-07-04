@@ -11,11 +11,19 @@ import {
   markDoneOn,
   removeSessionOn,
   shouldTrustRemoteSnapshot,
+  loadPlans,
+  savePlans,
+  buildPlanSnapshot,
+  missingPlanDays,
+  dateFromKey,
+  dateKey,
 } from './utils/tracker.js';
 import {
   subscribeToCompletions,
   pushExerciseCompletions,
   replayPendingWrites,
+  subscribeToPlans,
+  pushDayPlan,
 } from './utils/sync.js';
 import { useTodayModel } from './utils/useTodayModel.js';
 import { useWakeLock } from './utils/useWakeLock.js';
@@ -120,11 +128,13 @@ function WakeHint() {
 export default function App() {
   const [tab, setTabState] = useState(getInitialTab);
   const [completions, setCompletions] = useState(() => loadCompletions());
+  // Stored per-day plan snapshots (issue #53), mirrored like completions.
+  const [plans, setPlans] = useState(() => loadPlans());
   // Computed once here (rather than separately inside DailyView/ProgressView)
   // so it survives tab switches — App never unmounts, so this only
-  // recomputes when `completions` actually changes, not on every navigation
-  // back to a tab.
-  const todayModel = useTodayModel(completions);
+  // recomputes when `completions`/`plans` actually change, not on every
+  // navigation back to a tab.
+  const todayModel = useTodayModel(completions, plans);
   // Hold the screen awake while the app is open so the phone doesn't lock
   // mid-exercise (issue #54). The returned status is shown next to the
   // build info so on-device behavior is diagnosable without a debugger.
@@ -142,6 +152,12 @@ export default function App() {
   // See shouldTrustRemoteSnapshot's comment (tracker.js) for why an empty
   // snapshot can't always be trusted at face value.
   const trustedRemoteRef = useRef(false);
+  // Readiness gates for the plan backfill: it must wait until we have the
+  // authoritative remote completions (real history to reconstruct plans from)
+  // *and* the remote plans (so it doesn't rewrite days that already exist).
+  const [completionsReady, setCompletionsReady] = useState(false);
+  const [plansReady, setPlansReady] = useState(false);
+  const backfilledRef = useRef(false);
 
   // If ?ex= restored an open exercise on load (e.g. after the keep-awake
   // refresh hack's rare real reload, or the footer refresh button), the
@@ -178,11 +194,53 @@ export default function App() {
       trustedRemoteRef.current = true;
       setCompletions(remote);
       saveCompletions(remote);
+      setCompletionsReady(true);
+    });
+    // Plans have no "empty placeholder" ambiguity to guard against the way
+    // completions do — an empty plans tree is a legitimate first-run state
+    // that should trigger the backfill — so every snapshot is trusted.
+    const unsubPlans = subscribeToPlans((remote) => {
+      setPlans(remote);
+      savePlans(remote);
+      setPlansReady(true);
     });
     return () => {
       unsubData();
+      unsubPlans();
     };
   }, []);
+
+  // One-time plan backfill (issue #53). Once both the authoritative
+  // completions and plans have loaded, write a snapshot for every day that
+  // doesn't have one yet — the whole history through today. Gated on both
+  // being ready so it never reconstructs plans from half-loaded history or
+  // clobbers snapshots that already exist remotely; `backfilledRef` keeps it
+  // to a single pass. Each write is idempotent, so a missed one is just
+  // recomputed next load.
+  useEffect(() => {
+    if (!completionsReady || !plansReady || backfilledRef.current) return;
+    backfilledRef.current = true;
+    const days = missingPlanDays(completions, plans);
+    if (days.length === 0) return;
+    const todayKey = dateKey(new Date());
+    const additions = {};
+    for (const key of days) {
+      const source = key === todayKey ? 'live' : 'backfilled';
+      const snap = buildPlanSnapshot(exercises, completions, dateFromKey(key), source);
+      additions[key] = snap;
+      pushDayPlan(key, snap);
+    }
+    // Mirror the writes into local state/cache immediately (same immediacy as
+    // handleMarkDone) rather than waiting for the subscription to echo them
+    // back. Guarded by backfilledRef, so this can't cascade — the resulting
+    // `plans` change just re-runs the effect once, which returns early.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPlans((prev) => {
+      const next = { ...prev, ...additions };
+      savePlans(next);
+      return next;
+    });
+  }, [completionsReady, plansReady, completions, plans]);
 
   const handleMarkDone = useCallback((exerciseId) => {
     setCompletions((prev) => {
@@ -338,6 +396,7 @@ export default function App() {
         {tab === TAB_TODAY && (
           <DailyView
             completions={completions}
+            plans={plans}
             todayModel={todayModel}
             onOpenExercise={openExercise}
             onLogForDate={handleLogForDate}
@@ -347,7 +406,12 @@ export default function App() {
           <AllExercises completions={completions} onOpenExercise={openExercise} />
         )}
         {tab === TAB_PROGRESS && (
-          <ProgressView completions={completions} todayModel={todayModel} onOpenExercise={openExercise} />
+          <ProgressView
+            completions={completions}
+            plans={plans}
+            todayModel={todayModel}
+            onOpenExercise={openExercise}
+          />
         )}
         <BuildInfo onRefresh={handleRefresh} wakeStatus={wakeStatus} />
       </main>

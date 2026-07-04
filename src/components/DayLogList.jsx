@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { CheckBadgeIcon, ChevronRightIcon, StarIcon } from './Icons.jsx';
 import { exerciseById } from '../data/exercises.js';
 import { assetUrl } from '../utils/asset.js';
-import { isScheduledOn } from '../utils/tracker.js';
+import { isExtraOn } from '../utils/tracker.js';
 
 // Shared "what happened on this day" card list, used by both the week
 // strip's past-day view (DailyView) and the Progress calendar's day-detail
@@ -10,7 +10,7 @@ import { isScheduledOn } from '../utils/tracker.js';
 // new references when the selected day (or its data) actually changes — see
 // the groupDayCards useMemo in each caller — so the default shallow prop
 // comparison is enough to skip re-rendering on unrelated parent re-renders.
-function DayLogList({ cards, date, completions, onOpenExercise, emptyMessage }) {
+function DayLogList({ cards, date, completions, plans, onOpenExercise, emptyMessage }) {
   if (cards.length === 0) {
     return <p className="day-detail-empty">{emptyMessage}</p>;
   }
@@ -23,7 +23,7 @@ function DayLogList({ cards, date, completions, onOpenExercise, emptyMessage }) 
         // "Extra" = wasn't on that specific day's plan (optional or logged as
         // an unscheduled add) — same rule as today's Completed section, but
         // evaluated for the day this card belongs to.
-        const extra = !isScheduledOn(ex, completions, date);
+        const extra = isExtraOn(ex, completions, date, plans);
         return (
           <button key={card.id} className="exercise-row" onClick={() => onOpenExercise?.(ex, date)}>
             <span className="row-thumb">
