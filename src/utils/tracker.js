@@ -145,6 +145,63 @@ export function missingPlanDays(completions, plans, today = new Date()) {
   return days;
 }
 
+// Retroactive edits (issue #53): after a back-dated or removed session
+// changes `exercise`'s history from oldCompletions to newCompletions, which
+// days in [editDate..today] would now be scheduled differently than the
+// recorded plan says. For each: { key, action } — 'added' (now due, wasn't on
+// the recorded plan) or 'removed' (was on the plan, no longer due). Empty ⇒
+// no later day's plan is affected, so the edit applies silently.
+export function affectedPlanDays(
+  exercise,
+  oldCompletions,
+  newCompletions,
+  plans,
+  editDate,
+  today = new Date()
+) {
+  const out = [];
+  const endKey = dateKey(today);
+  const cursor = dateFromKey(dateKey(editDate));
+  while (dateKey(cursor) <= endKey) {
+    // `recorded` reads the stored snapshot (or reconstructs from the old
+    // history when there's none); `corrected` is what the frequency rules say
+    // under the fixed history.
+    const recorded = !isExtraOn(exercise, oldCompletions, cursor, plans);
+    const corrected = isScheduledOn(exercise, newCompletions, cursor);
+    if (recorded !== corrected) {
+      out.push({ key: dateKey(cursor), action: corrected ? 'added' : 'removed' });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return out;
+}
+
+// The "Update affected plans" write: add/remove just this one exercise in
+// each affected day's snapshot, preserving every other exercise's entry and
+// any amendments. A day missing a snapshot is rebuilt from the corrected
+// history first — safe, since a single-exercise edit can't change any other
+// exercise's membership for that day.
+export function applyPlanAmendments(
+  plans,
+  exercise,
+  affected,
+  exercisesForFallback,
+  newCompletions
+) {
+  const next = { ...plans };
+  const id = String(exercise.id);
+  for (const { key, action } of affected) {
+    const base =
+      next[key] ||
+      buildPlanSnapshot(exercisesForFallback, newCompletions, dateFromKey(key), 'backfilled');
+    const exMap = { ...(base.exercises || {}) };
+    if (action === 'added') exMap[id] = { target: planTarget(exercise) };
+    else delete exMap[id];
+    next[key] = { ...base, exercises: exMap };
+  }
+  return next;
+}
+
 export function markDone(completions, exerciseId) {
   const id = String(exerciseId);
   const prev = completions[id] || [];

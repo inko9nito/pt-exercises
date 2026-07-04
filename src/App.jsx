@@ -17,6 +17,8 @@ import {
   missingPlanDays,
   dateFromKey,
   dateKey,
+  affectedPlanDays,
+  applyPlanAmendments,
 } from './utils/tracker.js';
 import {
   subscribeToCompletions,
@@ -27,7 +29,8 @@ import {
 } from './utils/sync.js';
 import { useTodayModel } from './utils/useTodayModel.js';
 import { useWakeLock } from './utils/useWakeLock.js';
-import { exercises } from './data/exercises.js';
+import { exercises, exerciseById } from './data/exercises.js';
+import PlanAmendmentSheet from './components/PlanAmendmentSheet.jsx';
 
 const TAB_TODAY = 'today';
 const TAB_ALL = 'all';
@@ -158,6 +161,9 @@ export default function App() {
   const [completionsReady, setCompletionsReady] = useState(false);
   const [plansReady, setPlansReady] = useState(false);
   const backfilledRef = useRef(false);
+  // When a retroactive edit changes what later days were due to include, this
+  // holds { exerciseId, affected } to drive the plan-amendment prompt (#53).
+  const [planPrompt, setPlanPrompt] = useState(null);
 
   // If ?ex= restored an open exercise on load (e.g. after the keep-awake
   // refresh hack's rare real reload, or the footer refresh button), the
@@ -251,15 +257,30 @@ export default function App() {
     });
   }, []);
 
+  // A retroactive edit can change what *later* days were due to include, so
+  // after applying the session change it checks for affected days and, if
+  // any, prompts whether to also rewrite those days' recorded plans (#53).
+  const maybePromptPlanAmendment = useCallback(
+    (exerciseId, date, prevCompletions, nextCompletions) => {
+      const exercise = exerciseById.get(exerciseId);
+      if (!exercise) return;
+      const affected = affectedPlanDays(exercise, prevCompletions, nextCompletions, plans, date);
+      if (affected.length > 0) setPlanPrompt({ exerciseId, affected });
+    },
+    [plans]
+  );
+
   // Retroactive logging from a past day's detail view (issue #21).
-  const handleLogForDate = useCallback((exerciseId, date) => {
-    setCompletions((prev) => {
-      const next = markDoneOn(prev, exerciseId, date);
+  const handleLogForDate = useCallback(
+    (exerciseId, date) => {
+      const next = markDoneOn(completions, exerciseId, date);
+      setCompletions(next);
       saveCompletions(next);
       pushExerciseCompletions(exerciseId, next[String(exerciseId)]);
-      return next;
-    });
-  }, []);
+      maybePromptPlanAmendment(exerciseId, date, completions, next);
+    },
+    [completions, maybePromptPlanAmendment]
+  );
 
   // Undo only ever removes *today's* most recent session (never a past
   // day's) — see issue #43: the exercise-detail undo button used to remove
@@ -275,15 +296,31 @@ export default function App() {
     });
   }, []);
 
-  const handleRemoveFromLog = useCallback((exerciseId, date) => {
-    setCompletions((prev) => {
-      const next = removeSessionOn(prev, exerciseId, date);
-      if (next === prev) return prev; // nothing on that day to remove
+  const handleRemoveFromLog = useCallback(
+    (exerciseId, date) => {
+      const next = removeSessionOn(completions, exerciseId, date);
+      if (next === completions) return; // nothing on that day to remove
+      setCompletions(next);
       saveCompletions(next);
       pushExerciseCompletions(exerciseId, next[String(exerciseId)]);
-      return next;
-    });
-  }, []);
+      maybePromptPlanAmendment(exerciseId, date, completions, next);
+    },
+    [completions, maybePromptPlanAmendment]
+  );
+
+  const dismissPlanPrompt = useCallback(() => setPlanPrompt(null), []);
+
+  // "Update these days": rewrite just this exercise's membership in each
+  // affected day's snapshot and persist the touched days (scoped writes).
+  const applyPlanUpdate = useCallback(() => {
+    if (!planPrompt) return;
+    const exercise = exerciseById.get(planPrompt.exerciseId);
+    const next = applyPlanAmendments(plans, exercise, planPrompt.affected, exercises, completions);
+    setPlans(next);
+    savePlans(next);
+    for (const { key } of planPrompt.affected) pushDayPlan(key, next[key]);
+    setPlanPrompt(null);
+  }, [planPrompt, plans, completions]);
 
   // `date` (optional) opens the exercise as a log entry for that day; omitted
   // for the normal today/library flow.
@@ -462,6 +499,15 @@ export default function App() {
       )}
 
       {(needsTap || FORCE_WAKE_HINT) && <WakeHint />}
+
+      {planPrompt && (
+        <PlanAmendmentSheet
+          exerciseName={exerciseById.get(planPrompt.exerciseId)?.name || 'this exercise'}
+          affected={planPrompt.affected}
+          onKeep={dismissPlanPrompt}
+          onUpdate={applyPlanUpdate}
+        />
+      )}
     </div>
   );
 }

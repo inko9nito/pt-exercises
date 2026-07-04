@@ -23,6 +23,9 @@ import {
   isExtraOn,
   normalizePlans,
   getDayEntries,
+  affectedPlanDays,
+  applyPlanAmendments,
+  buildPlanSnapshot,
 } from './tracker.js';
 
 // Thursday, fixed so every "today"/"days ago" calculation below is
@@ -585,6 +588,121 @@ describe('getDayEntries', () => {
     // NOW is 2026-07-02; nothing done today, but the day isn't over.
     const entries = getDayEntries(named, {}, {}, new Date(NOW));
     expect(entries.filter((e) => !e.done)).toEqual([]);
+  });
+});
+
+// Retroactive-edit plan amendments (issue #53 PR2). NOW is Thursday
+// 2026-07-02, so Mon=06-29, Tue=06-30, Wed=07-01.
+const isoAt = (key) => new Date(`${key}T12:00:00`).toISOString();
+
+describe('affectedPlanDays', () => {
+  it('matches the issue worked example (back-date Tuesday for an EOD exercise)', () => {
+    // Step stretch (every-other-day) done Monday; back-date a Tuesday session.
+    const old = { '3': [isoAt('2026-06-29')] };
+    const next = { '3': [isoAt('2026-06-29'), isoAt('2026-06-30')] };
+    const affected = affectedPlanDays(
+      everyOtherDayEx,
+      old,
+      next,
+      undefined,
+      new Date('2026-06-30T12:00:00')
+    );
+    // Wednesday drops it (would no longer be due); Tue/Thu unchanged.
+    expect(affected).toEqual([{ key: '2026-07-01', action: 'removed' }]);
+  });
+
+  it('flags a day that becomes due when a session is removed (added)', () => {
+    // EOD done Mon + Wed; remove Wednesday → Thursday becomes due.
+    const old = { '3': [isoAt('2026-06-29'), isoAt('2026-07-01')] };
+    const next = { '3': [isoAt('2026-06-29')] };
+    const affected = affectedPlanDays(
+      everyOtherDayEx,
+      old,
+      next,
+      undefined,
+      new Date('2026-07-01T12:00:00')
+    );
+    expect(affected).toEqual([{ key: '2026-07-02', action: 'added' }]);
+  });
+
+  it('is empty for a daily exercise (every day is due regardless)', () => {
+    const old = { '1': [isoAt('2026-06-29')] };
+    const next = { '1': [isoAt('2026-06-29'), isoAt('2026-06-30')] };
+    expect(
+      affectedPlanDays(dailyEx, old, next, undefined, new Date('2026-06-30T12:00:00'))
+    ).toEqual([]);
+  });
+
+  it('reads the recorded snapshot, not reconstruction, for what was planned', () => {
+    // Snapshot records Wednesday as NOT having the EOD exercise, even though
+    // reconstruction from the old history would say it was due — so with the
+    // corrected history also saying not-due, there's nothing to amend.
+    const old = { '3': [isoAt('2026-06-29')] };
+    const next = { '3': [isoAt('2026-06-29'), isoAt('2026-06-30')] };
+    const plans = { '2026-07-01': { exercises: {}, amendments: {} } };
+    const affected = affectedPlanDays(
+      everyOtherDayEx,
+      old,
+      next,
+      plans,
+      new Date('2026-06-30T12:00:00')
+    );
+    expect(affected).toEqual([]);
+  });
+});
+
+describe('applyPlanAmendments', () => {
+  it('removes only the edited exercise, preserving others and amendments', () => {
+    const plans = {
+      '2026-07-01': {
+        exercises: { '1': { target: 1 }, '3': { target: 1 } },
+        amendments: { postponed: { '9': '2026-07-02' } },
+        source: 'live',
+        createdAt: 'c',
+      },
+    };
+    const next = applyPlanAmendments(
+      plans,
+      everyOtherDayEx,
+      [{ key: '2026-07-01', action: 'removed' }],
+      [dailyEx, everyOtherDayEx],
+      {}
+    );
+    expect(next['2026-07-01'].exercises).toEqual({ '1': { target: 1 } });
+    expect(next['2026-07-01'].amendments).toEqual({ postponed: { '9': '2026-07-02' } });
+    expect(next['2026-07-01'].source).toBe('live');
+    expect(next['2026-07-01'].createdAt).toBe('c');
+  });
+
+  it('adds the edited exercise with its target', () => {
+    const plans = {
+      '2026-07-02': { exercises: { '1': { target: 1 } }, amendments: {} },
+    };
+    const next = applyPlanAmendments(
+      plans,
+      everyOtherDayEx,
+      [{ key: '2026-07-02', action: 'added' }],
+      [dailyEx, everyOtherDayEx],
+      {}
+    );
+    expect(next['2026-07-02'].exercises).toEqual({
+      '1': { target: 1 },
+      '3': { target: 1 },
+    });
+  });
+
+  it('rebuilds a missing day snapshot from corrected history before amending', () => {
+    // No snapshot for the day; fallback builds it, then removes the exercise.
+    const next = applyPlanAmendments(
+      {},
+      everyOtherDayEx,
+      [{ key: '2026-07-01', action: 'removed' }],
+      [dailyEx, everyOtherDayEx],
+      { '1': [isoAt('2026-07-01')] }
+    );
+    // dailyEx stays (scheduled), everyOtherDayEx removed by the amendment.
+    expect(next['2026-07-01'].exercises).toEqual({ '1': { target: 1 } });
+    expect(buildPlanSnapshot).toBeDefined();
   });
 });
 
