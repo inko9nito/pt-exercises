@@ -31,6 +31,21 @@ function getInitialTab() {
   return VALID_TABS.includes(fromUrl) ? fromUrl : TAB_TODAY;
 }
 
+// The verbose keep-awake diagnostic (`wake: video playing · lock failed …`)
+// was invaluable during the #54 investigation but is developer noise for
+// daily use (issue #68 #3). It's now only shown with ?debug in the URL —
+// off by default, one tap away when the next on-device round needs it.
+const wakeParams =
+  typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
+const WAKE_DEBUG = wakeParams.has('debug');
+// The tap hint only appears in the iOS home-screen web clip (or a browser
+// with no Wake Lock API); a normal browser tab uses the native lock and
+// never shows it. ?wakehint force-renders it so its look is reviewable from
+// a plain preview link without installing the web clip.
+const FORCE_WAKE_HINT = wakeParams.has('wakehint');
+
 // __BUILD_TIME__/__BUILD_COMMIT__ are injected at build time (see
 // vite.config.js) so it's obvious on-device whether a stale, cached bundle
 // is being viewed instead of the latest deploy.
@@ -51,7 +66,20 @@ function BuildInfo({ onRefresh, wakeStatus }) {
           <RefreshIcon size={13} />
         </button>
       </div>
-      <span>wake: {wakeStatus}</span>
+      {WAKE_DEBUG && <span>wake: {wakeStatus}</span>}
+    </div>
+  );
+}
+
+// Recognition over recall (issue #68 #4): keep-awake in the iOS home-screen
+// web clip can't start its silent video until one real tap (autoplay
+// policy), so until then the screen isn't actually held. Rather than expect
+// the user to remember that rule, surface it — a small pill above the nav
+// that any tap dismisses (the same tap that arms the video).
+function WakeHint() {
+  return (
+    <div className="wake-hint" role="status">
+      Tap anywhere to keep the screen on
     </div>
   );
 }
@@ -67,7 +95,7 @@ export default function App() {
   // Hold the screen awake while the app is open so the phone doesn't lock
   // mid-exercise (issue #54). The returned status is shown next to the
   // build info so on-device behavior is diagnosable without a debugger.
-  const wakeStatus = useWakeLock();
+  const { status: wakeStatus, needsTap } = useWakeLock();
   const [selectedExercise, setSelectedExercise] = useState(null);
   // When an exercise is opened from a day's *log* (a past day in the week
   // strip, or the Progress calendar), this holds that date and the detail
@@ -304,6 +332,8 @@ export default function App() {
           closing={detailClosing}
         />
       )}
+
+      {(needsTap || FORCE_WAKE_HINT) && <WakeHint />}
     </div>
   );
 }
