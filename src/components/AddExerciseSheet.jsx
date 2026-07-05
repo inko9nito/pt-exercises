@@ -23,10 +23,6 @@ export default function AddExerciseSheet({
   const [closing, setClosing] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
-  // How far the on-screen keyboard intrudes from the bottom. The sheet is
-  // top-anchored so it doesn't move, but we pad the results list by this much
-  // so its last row can still scroll up above the keyboard.
-  const [kbInset, setKbInset] = useState(0);
   const startY = useRef(null);
   const closeTimer = useRef(null);
 
@@ -52,22 +48,6 @@ export default function AddExerciseSheet({
   useEffect(() => {
     document.body.classList.add('sheet-open');
     return () => document.body.classList.remove('sheet-open');
-  }, []);
-
-  // Track how much the keyboard covers, via the visual viewport.
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const update = () => {
-      setKbInset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
-    };
-    update();
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
-    return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
-    };
   }, []);
 
   // Play the slide-down before unmounting so the sheet leaves the way it
@@ -138,10 +118,7 @@ export default function AddExerciseSheet({
           </div>
         </div>
 
-        <div
-          className="sheet-scroll"
-          style={kbInset ? { paddingBottom: kbInset + 16 } : undefined}
-        >
+        <div className="sheet-scroll">
           <div className="search-wrap">
             <span className="search-icon">
               <SearchIcon size={16} />

@@ -1424,7 +1424,16 @@ body.sheet-open .app-main {
    ------------------------------------------------------------ */
 .sheet-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Full height with only a top anchor — no `bottom`. iOS Safari yanks the
+     bottom edge of fixed elements up above the keyboard, which was clipping
+     the sheet to the visual-viewport height; height (in dvh) doesn't shrink
+     for the keyboard, so the page stays full and the keyboard just overlays
+     it (issue #37). */
+  height: 100vh;
+  height: 100dvh;
   z-index: 80;
   background: rgba(9, 9, 11, 0.45);
   opacity: 1;
