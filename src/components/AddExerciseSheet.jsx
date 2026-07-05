@@ -23,6 +23,12 @@ export default function AddExerciseSheet({
   const [closing, setClosing] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
+  // How far the on-screen keyboard intrudes from the bottom, and the height
+  // the sheet is allowed to take above it. On iOS the keyboard shrinks the
+  // visual viewport but not the fixed/layout viewport, so without this the
+  // bottom-anchored sheet — search input and all — sits hidden behind the
+  // keyboard (issue #37 follow-up).
+  const [kb, setKb] = useState({ inset: 0, maxH: null });
   const startY = useRef(null);
   const closeTimer = useRef(null);
 
@@ -39,6 +45,25 @@ export default function AddExerciseSheet({
     return () => {
       cancelAnimationFrame(id);
       if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
+
+  // Keep the sheet above the keyboard by tracking the visual viewport. `inset`
+  // lifts the sheet clear of the keyboard; `maxH` caps its height to the space
+  // that's actually visible so the whole sheet (search first) stays on screen.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKb({ inset, maxH: inset > 0 ? Math.round(vv.height - 8) : null });
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
     };
   }, []);
 
@@ -81,10 +106,17 @@ export default function AddExerciseSheet({
   const offset = parked ? '100%' : `${dragY}px`;
 
   return (
-    <div className="sheet-overlay" style={{ opacity: parked ? 0 : 1 }} onClick={handleClose}>
+    <div
+      className="sheet-overlay"
+      style={{ opacity: parked ? 0 : 1, paddingBottom: kb.inset || undefined }}
+      onClick={handleClose}
+    >
       <div
         className={`sheet ${dragging ? 'is-dragging' : ''}`}
-        style={{ transform: `translateY(${offset})` }}
+        style={{
+          transform: `translateY(${offset})`,
+          maxHeight: kb.maxH ? `${kb.maxH}px` : undefined,
+        }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

@@ -1325,7 +1325,9 @@ button {
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--border);
   background: var(--white);
-  font-size: var(--text-base);
+  /* Must stay >= 16px: iOS Safari auto-zooms the page when a smaller input is
+     focused, which shifted and magnified the sheet (issue #37 follow-up). */
+  font-size: 16px;
   font-family: inherit;
   color: var(--ink);
   outline: none;
@@ -1505,6 +1507,7 @@ button {
 
 .sheet-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--space-4);
