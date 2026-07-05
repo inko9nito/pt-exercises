@@ -146,6 +146,12 @@ button {
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 12px);
 }
 
+/* While a bottom sheet is open, freeze the content column behind it so
+   scrolling stays inside the sheet (issue #37). */
+body.sheet-open .app-main {
+  overflow: hidden;
+}
+
 .build-info {
   display: flex;
   flex-direction: column;
@@ -1325,10 +1331,14 @@ button {
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--border);
   background: var(--white);
-  font-size: var(--text-base);
+  /* Must stay >= 16px: iOS Safari auto-zooms the page when a smaller input is
+     focused, which shifted and magnified the sheet (issue #37 follow-up). */
+  font-size: 16px;
   font-family: inherit;
   color: var(--ink);
   outline: none;
+  /* No gray flash box when tapped (iOS) — the focus ring is the only cue. */
+  -webkit-tap-highlight-color: transparent;
   transition: border-color .15s;
 }
 
@@ -1407,8 +1417,132 @@ button {
   border-color: var(--ink-3);
 }
 
-.add-exercise-body {
-  padding: var(--space-4);
+/* ------------------------------------------------------------
+   Page sheet — the "Log another exercise" search picker (#37).
+   Slides up and pins near the top (like an iOS form sheet), a page
+   over the page, leaving a small peek of the content behind. It is
+   NOT anchored to the bottom edge: the header (and search) sit at a
+   fixed top offset, so the keyboard never has to shove it around.
+   ------------------------------------------------------------ */
+.sheet-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Full height with only a top anchor — no `bottom`. iOS Safari yanks the
+     bottom edge of fixed elements up above the keyboard, which was clipping
+     the sheet to the visual-viewport height; height (in dvh) doesn't shrink
+     for the keyboard, so the page stays full and the keyboard just overlays
+     it (issue #37). */
+  height: 100vh;
+  height: 100dvh;
+  z-index: 80;
+  background: rgba(9, 9, 11, 0.45);
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Pinned top → bottom: a near-full-height page, not a bottom sheet. The
+     top gap shows a sliver of the page behind, below the notch/status bar. */
+  top: calc(env(safe-area-inset-top) + 12px);
+  bottom: 0;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-raised);
+  transform: translateY(0);
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+/* While the finger is down the sheet tracks it 1:1, no easing. */
+.sheet.is-dragging {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-overlay,
+  .sheet {
+    transition: none;
+  }
+}
+
+/* Grip + header form the drag surface; the list below scrolls on its own. */
+.sheet-grab {
+  flex-shrink: 0;
+  touch-action: none;
+  cursor: grab;
+}
+
+.sheet-handle {
+  display: block;
+  width: 38px;
+  height: 4px;
+  margin: 10px auto 2px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+
+.sheet-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 56px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sheet-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+}
+
+.sheet-close {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+
+.sheet-close:active {
+  background: var(--bg);
+}
+
+/* Search sits between the header and the list, fixed (not scrolling). */
+.sheet-search {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.sheet-search .search-wrap {
+  margin-bottom: 0;
+}
+
+.sheet-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--space-4);
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
 }
 
 /* ============================================================
