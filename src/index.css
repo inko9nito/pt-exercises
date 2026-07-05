@@ -1824,20 +1824,22 @@ body.sheet-open .app-main {
   font-weight: 700;
 }
 
-.calendar-cell.is-today .calendar-day-num {
+.calendar-cell.is-today:not(.has-activity) .calendar-day-num {
+  background: var(--bg);
   font-weight: 700;
   color: var(--ink);
 }
 
-.calendar-cell.is-today:not(.has-activity) .calendar-day-num {
-  background: var(--bg);
-}
-
 /* Today also having activity would otherwise be visually identical to any
    other activity day, so it keeps a ring rather than losing the "today"
-   signal to the fill. */
+   signal to the fill — a white ring hugging the circle, then a second green
+   ring outside that, so it reads clearly against the page instead of the
+   near-invisible single border this replaced. Text stays white/extra-bold
+   (inherited dark ink here read poorly against the filled green). */
 .calendar-cell.is-today.has-activity .calendar-day-num {
-  box-shadow: 0 0 0 2px var(--border-strong);
+  color: var(--white);
+  font-weight: 800;
+  box-shadow: 0 0 0 1px var(--white), 0 0 0 3px var(--accent);
 }
 
 .calendar-cell.is-selected .calendar-day-num {
