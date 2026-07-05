@@ -146,6 +146,12 @@ button {
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 12px);
 }
 
+/* While a bottom sheet is open, freeze the content column behind it so
+   scrolling stays inside the sheet (issue #37). */
+body.sheet-open .app-main {
+  overflow: hidden;
+}
+
 .build-info {
   display: flex;
   flex-direction: column;

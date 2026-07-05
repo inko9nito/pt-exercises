@@ -48,6 +48,14 @@ export default function AddExerciseSheet({
     };
   }, []);
 
+  // Lock the page behind the sheet so touch-scrolling over the backdrop (or
+  // past the list's own ends) doesn't scroll the Today list underneath — which
+  // on iOS also toggled the address bar and left dead space (issue #37).
+  useEffect(() => {
+    document.body.classList.add('sheet-open');
+    return () => document.body.classList.remove('sheet-open');
+  }, []);
+
   // Keep the sheet above the keyboard by tracking the visual viewport. `inset`
   // lifts the sheet clear of the keyboard; `maxH` caps its height to the space
   // that's actually visible so the whole sheet (search first) stays on screen.
