@@ -25,6 +25,7 @@ export default function AddExerciseSheet({
   const [dragging, setDragging] = useState(false);
   const startY = useRef(null);
   const closeTimer = useRef(null);
+  const overlayRef = useRef(null);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -64,6 +65,23 @@ export default function AddExerciseSheet({
       body.style.right = '';
       window.scrollTo(0, scrollY);
     };
+  }, []);
+
+  // Belt-and-suspenders for iOS: even with <body> frozen, when the keyboard is
+  // up iOS can still pan the page under a touch-drag on the sheet. Block any
+  // touch-move that isn't scrolling the results list within its own limits, so
+  // dragging the header, search, backdrop, or a non-scrollable list can't drag
+  // the sheet around or reveal the page behind it (issue #37).
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    const onTouchMove = (e) => {
+      const list = e.target.closest?.('.sheet-scroll');
+      const canScroll = list && list.scrollHeight > list.clientHeight;
+      if (!canScroll) e.preventDefault();
+    };
+    overlay.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => overlay.removeEventListener('touchmove', onTouchMove);
   }, []);
 
   // Play the slide-down before unmounting so the sheet leaves the way it
@@ -106,6 +124,7 @@ export default function AddExerciseSheet({
 
   return (
     <div
+      ref={overlayRef}
       className="sheet-overlay"
       style={{ opacity: parked ? 0 : 1 }}
       onClick={handleClose}
