@@ -29,7 +29,10 @@ function CalendarCell({ dateKeyValue, dayNumber, hasActivity, isToday, isSelecte
       disabled={isFuture}
       onClick={() => onSelect(isSelected ? null : dateKeyValue)}
     >
-      {dayNumber}
+      {/* Fixed size, smaller than the grid cell (rather than the cell itself
+          being the circle), so adjacent active days keep visible space
+          between their circles instead of touching edge-to-edge. */}
+      <span className="calendar-day-num">{dayNumber}</span>
     </button>
   );
 }

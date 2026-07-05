@@ -1790,10 +1790,6 @@ body.sheet-open .app-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--ink-2);
-  border-radius: 50%;
   position: relative;
 }
 
@@ -1801,37 +1797,55 @@ body.sheet-open .app-main {
   visibility: hidden;
 }
 
-/* A day with a logged session gets a solid filled circle around the day
-   number (matching the Fitbit reference in #82) rather than a small dot
-   underneath it — at calendar-grid density a dot read as barely-there. */
-.calendar-cell.has-activity {
+/* The day number/activity circle is a fixed size smaller than its grid
+   cell — rather than the cell itself being the circle — so adjacent active
+   days keep visible space between them instead of their circles touching
+   edge-to-edge (issue #82 follow-up). Matches WeekStrip's day-ring size for
+   the same "circle marking a day" language across the app. */
+.calendar-day-num {
+  width: 34px;
+  height: 34px;
+  max-width: 82%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+/* A day with a logged session gets a solid filled circle (matching the
+   Fitbit reference in #82) rather than a small dot underneath it — at
+   calendar-grid density a dot read as barely-there. */
+.calendar-cell.has-activity .calendar-day-num {
   background: var(--accent);
   color: var(--white);
   font-weight: 700;
 }
 
-.calendar-cell.is-today {
+.calendar-cell.is-today .calendar-day-num {
   font-weight: 700;
   color: var(--ink);
 }
 
-.calendar-cell.is-today:not(.has-activity) {
+.calendar-cell.is-today:not(.has-activity) .calendar-day-num {
   background: var(--bg);
 }
 
 /* Today also having activity would otherwise be visually identical to any
    other activity day, so it keeps a ring rather than losing the "today"
    signal to the fill. */
-.calendar-cell.is-today.has-activity {
+.calendar-cell.is-today.has-activity .calendar-day-num {
   box-shadow: 0 0 0 2px var(--border-strong);
 }
 
-.calendar-cell.is-selected {
+.calendar-cell.is-selected .calendar-day-num {
   background: var(--ink);
   color: var(--white);
 }
 
-.calendar-cell:disabled {
+.calendar-cell:disabled .calendar-day-num {
   color: var(--border-strong);
 }
 
