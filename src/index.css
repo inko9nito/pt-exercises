@@ -666,6 +666,14 @@ body.sheet-open .app-main {
   animation: detail-push-out 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
+/* Opened from the "Log another" sheet (z-index 80): lift the detail above the
+   sheet so it covers it while open and, on back, slides away to reveal the
+   sheet still sitting underneath — rather than the sheet (higher by default)
+   painting over the detail (issue #86). */
+.detail-screen.is-elevated {
+  z-index: 90;
+}
+
 @keyframes detail-push-in {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }

@@ -175,8 +175,10 @@ export default function DailyView({ completions, plans, todayModel, onOpenExerci
           exercises={notScheduledToday}
           completions={completions}
           onOpenExercise={(ex) => {
-            setShowAddSheet(false);
-            onOpenExercise(ex);
+            // Leave the sheet mounted underneath and open the detail *over* it
+            // (see App's `fromSheet`), so backing out of the exercise returns
+            // to the sheet instead of closing it entirely (issue #86).
+            onOpenExercise(ex, null, true);
           }}
           onClose={() => setShowAddSheet(false)}
         />

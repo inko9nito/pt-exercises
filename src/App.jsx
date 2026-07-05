@@ -132,6 +132,11 @@ export default function App() {
   // switches to a read-only log entry whose only action is removing that
   // day's session — rather than the today-oriented "Mark complete" flow.
   const [logDate, setLogDate] = useState(null);
+  // Whether the open detail was reached from the "Log another" sheet. When it
+  // was, the detail must render *above* that sheet (which stays mounted
+  // underneath) so backing out of the exercise returns to the sheet rather
+  // than closing it entirely (issue #86).
+  const [detailFromSheet, setDetailFromSheet] = useState(false);
   const [detailClosing, setDetailClosing] = useState(false);
   const closeTimerRef = useRef(null);
   // See shouldTrustRemoteSnapshot's comment (tracker.js) for why an empty
@@ -305,8 +310,9 @@ export default function App() {
   }, [planPrompt, plans, completions]);
 
   // `date` (optional) opens the exercise as a log entry for that day; omitted
-  // for the normal today/library flow.
-  const openExercise = useCallback((exercise, date = null) => {
+  // for the normal today/library flow. `fromSheet` marks that it was opened
+  // from the "Log another" sheet, so the detail layers over that sheet (#86).
+  const openExercise = useCallback((exercise, date = null, fromSheet = false) => {
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -317,6 +323,7 @@ export default function App() {
     window.history.pushState({ exerciseId: exercise.id }, '', exerciseUrl(exercise.id));
     setDetailClosing(false);
     setLogDate(date);
+    setDetailFromSheet(fromSheet);
     setSelectedExercise(exercise);
   }, []);
 
@@ -477,6 +484,7 @@ export default function App() {
           onNext={goToNextExercise}
           logDate={logDate}
           closing={detailClosing}
+          elevated={detailFromSheet}
         />
       )}
 
