@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon } from './Icons.jsx';
 import { dateKey, mondayIndex, WEEKDAY_LABELS } from '../utils/tracker.js';
 
 function getMonthCells(year, month) {
@@ -37,40 +36,17 @@ function CalendarCell({ dateKeyValue, dayNumber, hasActivity, isToday, isSelecte
 
 const MemoCalendarCell = memo(CalendarCell);
 
-export default function MonthCalendar({ monthOffset, onMonthChange, dateMap, selectedDate, onSelectDate }) {
-  const base = new Date();
-  base.setDate(1);
-  base.setMonth(base.getMonth() + monthOffset);
-  const year = base.getFullYear();
-  const month = base.getMonth();
-
+// Headerless month grid: the enclosing view owns the month label and
+// prev/next navigation (shared with the week view's period nav in #82), so
+// this renders only the weekday row and the day cells for the given
+// year/month.
+export default function MonthCalendar({ year, month, dateMap, selectedDate, onSelectDate }) {
   const cells = getMonthCells(year, month);
-  const monthLabel = base.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
   const today = new Date();
   const todayKey = dateKey(today);
 
   return (
     <div className="calendar-card">
-      <div className="calendar-header">
-        <button
-          className="calendar-nav"
-          onClick={() => onMonthChange(monthOffset - 1)}
-          aria-label="Previous month"
-        >
-          <ChevronLeftIcon size={18} />
-        </button>
-        <span className="calendar-month-label">{monthLabel}</span>
-        <button
-          className="calendar-nav"
-          onClick={() => onMonthChange(monthOffset + 1)}
-          disabled={monthOffset >= 0}
-          aria-label="Next month"
-        >
-          <ChevronRightIcon size={18} />
-        </button>
-      </div>
-
       <div className="calendar-weekdays">
         {WEEKDAY_LABELS.map((d) => (
           <span key={d}>{d}</span>
