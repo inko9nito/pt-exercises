@@ -23,12 +23,10 @@ export default function AddExerciseSheet({
   const [closing, setClosing] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
-  // How far the on-screen keyboard intrudes from the bottom, and the height
-  // the sheet is allowed to take above it. On iOS the keyboard shrinks the
-  // visual viewport but not the fixed/layout viewport, so without this the
-  // bottom-anchored sheet — search input and all — sits hidden behind the
-  // keyboard (issue #37 follow-up).
-  const [kb, setKb] = useState({ inset: 0, maxH: null });
+  // How far the on-screen keyboard intrudes from the bottom. The sheet is
+  // top-anchored so it doesn't move, but we pad the results list by this much
+  // so its last row can still scroll up above the keyboard.
+  const [kbInset, setKbInset] = useState(0);
   const startY = useRef(null);
   const closeTimer = useRef(null);
 
@@ -56,15 +54,12 @@ export default function AddExerciseSheet({
     return () => document.body.classList.remove('sheet-open');
   }, []);
 
-  // Keep the sheet above the keyboard by tracking the visual viewport. `inset`
-  // lifts the sheet clear of the keyboard; `maxH` caps its height to the space
-  // that's actually visible so the whole sheet (search first) stays on screen.
+  // Track how much the keyboard covers, via the visual viewport.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
     const update = () => {
-      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      setKb({ inset, maxH: inset > 0 ? Math.round(vv.height - 8) : null });
+      setKbInset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
     };
     update();
     vv.addEventListener('resize', update);
@@ -116,15 +111,12 @@ export default function AddExerciseSheet({
   return (
     <div
       className="sheet-overlay"
-      style={{ opacity: parked ? 0 : 1, paddingBottom: kb.inset || undefined }}
+      style={{ opacity: parked ? 0 : 1 }}
       onClick={handleClose}
     >
       <div
         className={`sheet ${dragging ? 'is-dragging' : ''}`}
-        style={{
-          transform: `translateY(${offset})`,
-          maxHeight: kb.maxH ? `${kb.maxH}px` : undefined,
-        }}
+        style={{ transform: `translateY(${offset})` }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -146,7 +138,10 @@ export default function AddExerciseSheet({
           </div>
         </div>
 
-        <div className="sheet-scroll">
+        <div
+          className="sheet-scroll"
+          style={kbInset ? { paddingBottom: kbInset + 16 } : undefined}
+        >
           <div className="search-wrap">
             <span className="search-icon">
               <SearchIcon size={16} />
