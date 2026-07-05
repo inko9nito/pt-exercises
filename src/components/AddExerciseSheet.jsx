@@ -42,12 +42,28 @@ export default function AddExerciseSheet({
     };
   }, []);
 
-  // Lock the page behind the sheet so touch-scrolling over the backdrop (or
-  // past the list's own ends) doesn't scroll the Today list underneath — which
-  // on iOS also toggled the address bar and left dead space (issue #37).
+  // Lock the page behind the sheet so touch-scrolling over the sheet doesn't
+  // also scroll the Today list underneath (issue #37). The real scroller here
+  // is the window (the app column grows past the viewport rather than scrolling
+  // an inner element), so freeze it by pinning <body> and restore the exact
+  // scroll position on close. The class also caps .app-main as a belt-and-
+  // suspenders lock in case an inner element is the scroller instead.
   useEffect(() => {
-    document.body.classList.add('sheet-open');
-    return () => document.body.classList.remove('sheet-open');
+    const scrollY = window.scrollY;
+    const { body } = document;
+    body.classList.add('sheet-open');
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    return () => {
+      body.classList.remove('sheet-open');
+      body.style.position = '';
+      body.style.top = '';
+      body.style.left = '';
+      body.style.right = '';
+      window.scrollTo(0, scrollY);
+    };
   }, []);
 
   // Play the slide-down before unmounting so the sheet leaves the way it
