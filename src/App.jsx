@@ -352,6 +352,11 @@ export default function App() {
 
   const setTab = useCallback((next) => {
     setTabState(next);
+    // The three tabs share one page-level scroll (App never unmounts them,
+    // and .app-main has no height cap of its own to scroll internally), so
+    // without this a tab opens still scrolled to wherever the previous one
+    // was left (issue #81).
+    window.scrollTo(0, 0);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', next);
     window.history.replaceState(window.history.state, '', url.toString());

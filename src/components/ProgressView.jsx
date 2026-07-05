@@ -115,6 +115,13 @@ export default function ProgressView({ completions, plans, todayModel, onOpenExe
     else setView(VIEW_MONTH);
   };
 
+  // Drilling into a week (or toggling back to Month) swaps the content in
+  // place on the shared page scroll, so without this the week screen opens
+  // still scrolled to wherever the month view had been left (issue #81).
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view]);
+
   useEffect(() => {
     const onPopState = (e) => {
       // Only react once the drill entry itself is the one popped — if the
