@@ -264,11 +264,25 @@ body.sheet-open .app-main {
 /* ============================================================
    Week strip (sits directly on the page, no card wrapper)
    ============================================================ */
+/* Clips the 3-wide sliding track (previous/current/next week) to a single
+   week's width, so swiping between weeks visibly drags/animates rather than
+   the days instantly swapping in place (issue #84). */
+.week-track-viewport {
+  overflow: hidden;
+  touch-action: pan-y;
+  margin-bottom: var(--space-5);
+}
+
+.week-track {
+  display: flex;
+  width: 100%;
+  will-change: transform;
+}
+
 .week-strip {
   display: flex;
   justify-content: space-between;
-  touch-action: pan-y;
-  margin-bottom: var(--space-5);
+  flex: 0 0 100%;
 }
 
 .week-day {
