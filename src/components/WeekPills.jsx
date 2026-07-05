@@ -2,6 +2,8 @@ import { memo } from 'react';
 import { CheckIcon, StarIcon } from './Icons.jsx';
 import { exercises } from '../data/exercises.js';
 import { dateKey, getPlanProgressOn, WEEKDAY_LABELS } from '../utils/tracker.js';
+import { weekDates } from '../utils/progressStats.js';
+import { useWeekSwipeTrack } from '../utils/useWeekSwipeTrack.js';
 
 // The week-mode header strip. Deliberately mirrors WeekStrip's day cell (ring
 // fill + bonus star) rather than the flat checkmark bars from the Fitbit
@@ -36,26 +38,35 @@ function WeekPillDay({ label, dayNumber, planTotal, planDone, bonusDone, isToday
 
 const MemoWeekPillDay = memo(WeekPillDay);
 
-function WeekPills({ days, completions, plans, today }) {
+function WeekPills({ weekOffset, onWeekChange, canGoNext, completions, plans, today }) {
   const todayKey = dateKey(today);
+  const { trackProps, trackStyle, onTransitionEnd } = useWeekSwipeTrack(weekOffset, onWeekChange, canGoNext);
+
+  const renderWeek = (offset) =>
+    weekDates(offset, today).map((date, i) => {
+      const key = dateKey(date);
+      const { planTotal, planDone, bonusDone } = getPlanProgressOn(exercises, completions, date, plans);
+      return (
+        <MemoWeekPillDay
+          key={key}
+          label={WEEKDAY_LABELS[i]}
+          dayNumber={date.getDate()}
+          planTotal={planTotal}
+          planDone={planDone}
+          bonusDone={bonusDone}
+          isToday={key === todayKey}
+          isFuture={key > todayKey}
+        />
+      );
+    });
+
   return (
-    <div className="week-strip">
-      {days.map((date, i) => {
-        const key = dateKey(date);
-        const { planTotal, planDone, bonusDone } = getPlanProgressOn(exercises, completions, date, plans);
-        return (
-          <MemoWeekPillDay
-            key={key}
-            label={WEEKDAY_LABELS[i]}
-            dayNumber={date.getDate()}
-            planTotal={planTotal}
-            planDone={planDone}
-            bonusDone={bonusDone}
-            isToday={key === todayKey}
-            isFuture={key > todayKey}
-          />
-        );
-      })}
+    <div className="week-track-viewport" {...trackProps}>
+      <div className="week-track" style={trackStyle} onTransitionEnd={onTransitionEnd}>
+        <div className="week-strip">{renderWeek(weekOffset - 1)}</div>
+        <div className="week-strip">{renderWeek(weekOffset)}</div>
+        <div className="week-strip">{renderWeek(weekOffset + 1)}</div>
+      </div>
     </div>
   );
 }

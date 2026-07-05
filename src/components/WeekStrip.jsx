@@ -1,7 +1,7 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { exercises } from '../data/exercises.js';
 import { dateKey, getPlanProgressOn, mondayIndex, WEEKDAY_LABELS } from '../utils/tracker.js';
-import { useSwipe } from '../utils/useSwipe.js';
+import { useWeekSwipeTrack } from '../utils/useWeekSwipeTrack.js';
 import { CheckIcon, StarIcon } from './Icons.jsx';
 
 function getWeekDates(weekOffset) {
@@ -52,40 +52,42 @@ const MemoWeekDay = memo(WeekDay);
 
 export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions, plans }) {
   const todayKey = dateKey(new Date());
-  const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
+  const { trackProps, trackStyle, onTransitionEnd } = useWeekSwipeTrack(weekOffset, onWeekChange);
 
-  const swipeHandlers = useSwipe({
-    onSwipeLeft: () => onWeekChange(weekOffset + 1),
-    onSwipeRight: () => onWeekChange(weekOffset - 1),
-  });
+  const renderWeek = (offset) =>
+    getWeekDates(offset).map((date, i) => {
+      const key = dateKey(date);
+      // Each day's ring fills against *that day's own plan* (reconstructed
+      // from history), not the whole 20-exercise library — otherwise a
+      // fully-completed day where only a handful were due reads as barely
+      // started. Bonus/extra work can't fill the ring (that's the
+      // non-fungible plan-vs-bonus rule), so it gets its own corner dot so
+      // a day with extra sessions doesn't look identical to an empty one.
+      const { planTotal, planDone, bonusDone } = getPlanProgressOn(exercises, completions, date, plans);
+
+      return (
+        <MemoWeekDay
+          key={key}
+          dateKeyValue={key}
+          label={WEEKDAY_LABELS[i]}
+          dayNumber={date.getDate()}
+          isToday={key === todayKey}
+          isSelected={key === selectedDate}
+          planTotal={planTotal}
+          planDone={planDone}
+          bonusDone={bonusDone}
+          onSelect={onSelectDate}
+        />
+      );
+    });
 
   return (
-    <div className="week-strip" {...swipeHandlers}>
-      {weekDates.map((date, i) => {
-        const key = dateKey(date);
-        // Each day's ring fills against *that day's own plan* (reconstructed
-        // from history), not the whole 20-exercise library — otherwise a
-        // fully-completed day where only a handful were due reads as barely
-        // started. Bonus/extra work can't fill the ring (that's the
-        // non-fungible plan-vs-bonus rule), so it gets its own corner dot so
-        // a day with extra sessions doesn't look identical to an empty one.
-        const { planTotal, planDone, bonusDone } = getPlanProgressOn(exercises, completions, date, plans);
-
-        return (
-          <MemoWeekDay
-            key={key}
-            dateKeyValue={key}
-            label={WEEKDAY_LABELS[i]}
-            dayNumber={date.getDate()}
-            isToday={key === todayKey}
-            isSelected={key === selectedDate}
-            planTotal={planTotal}
-            planDone={planDone}
-            bonusDone={bonusDone}
-            onSelect={onSelectDate}
-          />
-        );
-      })}
+    <div className="week-track-viewport" {...trackProps}>
+      <div className="week-track" style={trackStyle} onTransitionEnd={onTransitionEnd}>
+        <div className="week-strip">{renderWeek(weekOffset - 1)}</div>
+        <div className="week-strip">{renderWeek(weekOffset)}</div>
+        <div className="week-strip">{renderWeek(weekOffset + 1)}</div>
+      </div>
     </div>
   );
 }

@@ -232,7 +232,14 @@ export default function ProgressView({ completions, plans, todayModel, onOpenExe
         </>
       ) : (
         <>
-          <WeekPills days={week} completions={completions} plans={plans} today={today} />
+          <WeekPills
+            weekOffset={weekOffset}
+            onWeekChange={setWeekOffset}
+            canGoNext={weekOffset < 0}
+            completions={completions}
+            plans={plans}
+            today={today}
+          />
 
           <div className="week-log">
             {weekLog.length === 0 ? (
