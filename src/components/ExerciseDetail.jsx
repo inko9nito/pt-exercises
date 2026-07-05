@@ -10,7 +10,7 @@ function pluralize(value, singular, plural) {
   return value === '1' ? singular : plural;
 }
 
-export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onRemoveFromLog, onClose, onNext, logDate, closing }) {
+export default function ExerciseDetail({ exercise, completions, onMarkDone, onUndo, onRemoveFromLog, onClose, onNext, logDate, closing, elevated }) {
   const id = String(exercise.id);
   const history = completions[id] || [];
   const todaySessions = getSessionsOn(completions, exercise.id, new Date());
@@ -58,7 +58,7 @@ export default function ExerciseDetail({ exercise, completions, onMarkDone, onUn
   const nextDue = getNextDueEstimate(exercise, completions);
 
   return (
-    <div className={`detail-screen ${closing ? 'is-closing' : ''}`}>
+    <div className={`detail-screen ${closing ? 'is-closing' : ''} ${elevated ? 'is-elevated' : ''}`}>
       <div className="detail-header">
         <button className="back-button" onClick={onClose} aria-label="Back">
           <ChevronLeftIcon size={22} />
