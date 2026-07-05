@@ -6,6 +6,13 @@
   stop at pushing the branch.
 - **Never enable auto-merge and never merge a PR** until the repo owner
   explicitly says to. Open the PR, then leave it for review.
+- **Always surface the live preview link** when reporting a newly opened (or
+  updated) PR. This repo's `pr-preview.yml` workflow deploys every PR to
+  `https://inko9nito.github.io/pt-exercises/pr-<number>/` and posts it as a
+  sticky PR comment (marker `<!-- pr-preview-link -->`) — fetch that comment
+  (`pull_request_read` method `get_comments`, or `get_check_runs` for the
+  `deploy-preview` job status if the comment hasn't landed yet) and include the
+  URL in the reply. Don't just link the PR page itself.
 
 ## Retrieving images attached to GitHub issues / PRs
 
