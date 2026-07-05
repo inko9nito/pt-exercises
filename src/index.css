@@ -1337,6 +1337,8 @@ body.sheet-open .app-main {
   font-family: inherit;
   color: var(--ink);
   outline: none;
+  /* No gray flash box when tapped (iOS) — the focus ring is the only cue. */
+  -webkit-tap-highlight-color: transparent;
   transition: border-color .15s;
 }
 
@@ -1524,12 +1526,22 @@ body.sheet-open .app-main {
   background: var(--bg);
 }
 
+/* Search sits between the header and the list, fixed (not scrolling). */
+.sheet-search {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.sheet-search .search-wrap {
+  margin-bottom: 0;
+}
+
 .sheet-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--space-4);
+  padding: 0 var(--space-4);
   padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
 }
 

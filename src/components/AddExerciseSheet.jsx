@@ -118,7 +118,10 @@ export default function AddExerciseSheet({
           </div>
         </div>
 
-        <div className="sheet-scroll">
+        {/* Search is pinned outside the scroll region: keeping the input out of
+            the scrolling list stops iOS from scroll-jumping the sheet to
+            "reveal" it when focused. */}
+        <div className="sheet-search">
           <div className="search-wrap">
             <span className="search-icon">
               <SearchIcon size={16} />
@@ -131,7 +134,9 @@ export default function AddExerciseSheet({
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+        </div>
 
+        <div className="sheet-scroll">
           {filtered.length === 0 ? (
             <p className="empty-state">No exercises match your search.</p>
           ) : (
