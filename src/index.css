@@ -172,6 +172,7 @@ body.sheet-open .app-main {
 }
 
 .refresh-button {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -180,6 +181,15 @@ body.sheet-open .app-main {
   border-radius: 50%;
   color: var(--ink-3);
   flex-shrink: 0;
+}
+
+/* Invisible halo brings the hit area up to the 44px accessibility minimum
+   without growing the visible button (issue #45). */
+.refresh-button::before {
+  content: '';
+  position: absolute;
+  inset: -11px;
+  border-radius: 50%;
 }
 
 .refresh-button:active {
@@ -723,6 +733,7 @@ body.sheet-open .app-main {
 }
 
 .back-button {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -731,6 +742,16 @@ body.sheet-open .app-main {
   justify-content: center;
   color: var(--ink);
   flex-shrink: 0;
+}
+
+/* Invisible halo brings the hit area up to the 44px accessibility minimum
+   without growing the visible circle (issue #45), matching the technique
+   already used for .hero-arrow. */
+.back-button::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
 }
 
 .back-button:active {
@@ -1194,6 +1215,14 @@ body.sheet-open .app-main {
   box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
 
+/* Invisible halo brings the hit area up to the 44px accessibility minimum
+   without growing the visible button (issue #45). */
+.hero-play-toggle::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
 .hero-arrow {
   position: absolute;
   top: 50%;
@@ -1316,6 +1345,15 @@ body.sheet-open .app-main {
   align-items: center;
   justify-content: center;
   z-index: 1;
+}
+
+/* Invisible halo brings the hit area up to the 44px accessibility minimum
+   without growing the visible button (issue #45). */
+.lightbox-close::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
 }
 
 .lightbox-pips {
@@ -1551,6 +1589,15 @@ body.sheet-open .app-main {
   flex-shrink: 0;
 }
 
+/* Invisible halo brings the hit area up to the 44px accessibility minimum
+   without growing the visible button (issue #45). */
+.sheet-close::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+}
+
 .sheet-close:active {
   background: var(--bg);
 }
@@ -1638,6 +1685,7 @@ body.sheet-open .app-main {
 }
 
 .period-btn {
+  position: relative;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -1646,6 +1694,15 @@ body.sheet-open .app-main {
   justify-content: center;
   color: var(--ink-2);
   background: var(--bg);
+}
+
+/* Invisible halo brings the hit area up to the 44px accessibility minimum
+   without growing the visible button (issue #45). */
+.period-btn::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
 }
 
 .period-btn:disabled {
