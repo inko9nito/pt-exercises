@@ -1574,28 +1574,23 @@ body.sheet-open .app-main {
   text-align: center;
 }
 
+/* Visible size matches the 44px accessibility minimum outright (rather than
+   an invisible hit-area halo) — as the sheet's main dismiss action, it reads
+   as more confidently tappable when the target you see is the target you
+   get (issue #45). The header's padding is sized to match. */
 .sheet-close {
   position: absolute;
   right: var(--space-3);
   top: 50%;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--ink-2);
   flex-shrink: 0;
-}
-
-/* Invisible halo brings the hit area up to the 44px accessibility minimum
-   without growing the visible button (issue #45). */
-.sheet-close::before {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
 }
 
 .sheet-close:active {
