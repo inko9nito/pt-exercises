@@ -1824,10 +1824,14 @@ body.sheet-open .app-main {
   font-weight: 700;
 }
 
+/* Today always gets a ring so it reads as "today" at a glance regardless of
+   whether anything's been logged yet — not just once the activity fill
+   shows up. */
 .calendar-cell.is-today:not(.has-activity) .calendar-day-num {
   background: var(--bg);
   font-weight: 700;
   color: var(--ink);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 /* Today also having activity would otherwise be visually identical to any
