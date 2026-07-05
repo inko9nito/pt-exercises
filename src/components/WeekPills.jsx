@@ -1,31 +1,59 @@
 import { memo } from 'react';
-import { CheckIcon } from './Icons.jsx';
-import { dateKey, WEEKDAY_LABELS } from '../utils/tracker.js';
+import { CheckIcon, StarIcon } from './Icons.jsx';
+import { exercises } from '../data/exercises.js';
+import { dateKey, getPlanProgressOn, WEEKDAY_LABELS } from '../utils/tracker.js';
 
-// The week-mode header strip: one tall pill per day (Mon–Sun). A day with any
-// logged session fills solid with a check; days without stay hollow; days
-// still in the future read as muted. Purely a status display — the day-by-day
-// log below is where the detail lives (mirrors the Fitbit reference in #82).
-function WeekPills({ days, dateMap, today }) {
+// The week-mode header strip. Deliberately mirrors WeekStrip's day cell (ring
+// fill + bonus star) rather than the flat checkmark bars from the Fitbit
+// reference in #82 — the app already has its own "how a day's completion
+// looks" language, and this is the same underlying data (that day's plan
+// progress), so it should read the same way here as it does on the Today tab.
+function WeekPillDay({ label, dayNumber, planTotal, planDone, bonusDone, isToday, isFuture }) {
+  const fraction = planTotal > 0 ? planDone / planTotal : 0;
+  const isDone = planTotal > 0 && planDone >= planTotal;
+  const hasBonus = bonusDone > 0;
+  const angle = Math.min(fraction, 1) * 360;
+
+  return (
+    <div className={`week-day ${isFuture ? 'is-future' : ''}`}>
+      <span className={`week-day-label ${isToday ? 'is-today' : ''}`}>{label}</span>
+      <span
+        className={`week-day-ring ${isDone ? 'is-done' : ''}`}
+        style={!isDone ? { background: `conic-gradient(var(--success) ${angle}deg, var(--border) 0deg)` } : undefined}
+      >
+        <span className={`week-day-ring-hole ${isToday ? 'is-today' : ''}`}>
+          {isDone ? <CheckIcon size={13} /> : dayNumber}
+        </span>
+        {hasBonus && (
+          <span className="week-day-bonus-star" aria-label="Extra exercise logged">
+            <StarIcon size={12} />
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+const MemoWeekPillDay = memo(WeekPillDay);
+
+function WeekPills({ days, completions, plans, today }) {
   const todayKey = dateKey(today);
   return (
-    <div className="week-pills">
+    <div className="week-strip">
       {days.map((date, i) => {
         const key = dateKey(date);
-        const active = (dateMap.get(key)?.length ?? 0) > 0;
-        const isFuture = key > todayKey;
-        const isToday = key === todayKey;
+        const { planTotal, planDone, bonusDone } = getPlanProgressOn(exercises, completions, date, plans);
         return (
-          <div key={key} className="week-pill-col">
-            <span
-              className={`week-pill ${active ? 'is-active' : ''} ${isFuture ? 'is-future' : ''} ${
-                isToday ? 'is-today' : ''
-              }`}
-            >
-              {active && <CheckIcon size={16} />}
-            </span>
-            <span className="week-pill-label">{WEEKDAY_LABELS[i][0]}</span>
-          </div>
+          <MemoWeekPillDay
+            key={key}
+            label={WEEKDAY_LABELS[i]}
+            dayNumber={date.getDate()}
+            planTotal={planTotal}
+            planDone={planDone}
+            bonusDone={bonusDone}
+            isToday={key === todayKey}
+            isFuture={key > todayKey}
+          />
         );
       })}
     </div>

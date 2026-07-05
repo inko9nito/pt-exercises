@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import MonthCalendar from './MonthCalendar.jsx';
 import WeekPills from './WeekPills.jsx';
 import DayLogList from './DayLogList.jsx';
@@ -16,6 +16,11 @@ import {
 
 const VIEW_WEEK = 'week';
 const VIEW_MONTH = 'month';
+// Marks a history entry pushed by drilling from Month into a specific week,
+// so the popstate handler below can tell "our drill entry got popped" apart
+// from any other back navigation (e.g. closing an exercise detail opened
+// from the week log, which pushes/pops its own entries on top of ours).
+const DRILL_STATE_KEY = 'progressWeekDrill';
 
 function plural(n, word) {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -26,6 +31,11 @@ export default function ProgressView({ completions, plans, todayModel, onOpenExe
   const [view, setView] = useState(VIEW_MONTH);
   const [monthOffset, setMonthOffset] = useState(0);
   const [weekOffset, setWeekOffset] = useState(0);
+  // Whether the current week view was reached by drilling into a specific
+  // week from Month (a calendar day or a "Total per week" card) rather than
+  // by tapping the Week/Month toggle directly. Only the drill path pushes
+  // history, so only it gets a back button and native swipe-back.
+  const [drilledIn, setDrilledIn] = useState(false);
 
   const today = new Date();
 
@@ -81,10 +91,43 @@ export default function ProgressView({ completions, plans, todayModel, onOpenExe
   const stats = isMonth ? monthStats : weekStats;
   const denominator = isMonth ? month.daysInMonth : 7;
 
+  // Tapping a specific week (a calendar day or a "Total per week" card) drills
+  // from Month into that week. `monthOffset` is untouched by the drill — it
+  // stays whatever month you were looking at — so returning to Month (via the
+  // back button, the toggle, or a swipe) always lands back on the exact month
+  // you left, with no separate "return to" bookkeeping needed. A history
+  // entry is pushed so the native back gesture works too, mirroring how
+  // App.jsx pushes one to open the exercise detail.
   const goToWeek = (targetOffset) => {
+    window.history.pushState({ [DRILL_STATE_KEY]: true }, '', window.location.href);
     setWeekOffset(targetOffset);
     setView(VIEW_WEEK);
+    setDrilledIn(true);
   };
+
+  // Leaving a drilled-in week (back button, the Month toggle, or a swipe) all
+  // funnel through history.back() when a drill entry is pushed, so the actual
+  // view change happens in exactly one place — the popstate handler below —
+  // instead of three separate call sites that could drift out of sync with
+  // the history stack.
+  const leaveDrill = () => {
+    if (drilledIn) window.history.back();
+    else setView(VIEW_MONTH);
+  };
+
+  useEffect(() => {
+    const onPopState = (e) => {
+      // Only react once the drill entry itself is the one popped — if the
+      // current state still carries the marker, something pushed on top of
+      // it (e.g. an exercise opened from the week log) was what closed.
+      if (drilledIn && !e.state?.[DRILL_STATE_KEY]) {
+        setView(VIEW_MONTH);
+        setDrilledIn(false);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [drilledIn]);
 
   return (
     <div className="progress-view">
@@ -101,13 +144,18 @@ export default function ProgressView({ completions, plans, todayModel, onOpenExe
           role="tab"
           aria-selected={view === VIEW_MONTH}
           className={`view-toggle-btn ${view === VIEW_MONTH ? 'is-active' : ''}`}
-          onClick={() => setView(VIEW_MONTH)}
+          onClick={leaveDrill}
         >
           Month
         </button>
       </div>
 
       <div className="period-nav">
+        {!isMonth && (
+          <button className="back-button" onClick={leaveDrill} aria-label="Back to month">
+            <ChevronLeftIcon size={22} />
+          </button>
+        )}
         <span className="period-label">{periodLabel}</span>
         <div className="period-controls">
           <button className="period-btn" onClick={() => setOffset(offset - 1)} aria-label="Previous">
@@ -177,7 +225,7 @@ export default function ProgressView({ completions, plans, todayModel, onOpenExe
         </>
       ) : (
         <>
-          <WeekPills days={week} dateMap={dateMap} today={today} />
+          <WeekPills days={week} completions={completions} plans={plans} today={today} />
 
           <div className="week-log">
             {weekLog.length === 0 ? (
