@@ -1801,31 +1801,34 @@ body.sheet-open .app-main {
   visibility: hidden;
 }
 
-.calendar-cell.has-activity::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+/* A day with a logged session gets a solid filled circle around the day
+   number (matching the Fitbit reference in #82) rather than a small dot
+   underneath it — at calendar-grid density a dot read as barely-there. */
+.calendar-cell.has-activity {
   background: var(--accent);
+  color: var(--white);
+  font-weight: 700;
 }
 
 .calendar-cell.is-today {
-  background: var(--bg);
   font-weight: 700;
   color: var(--ink);
+}
+
+.calendar-cell.is-today:not(.has-activity) {
+  background: var(--bg);
+}
+
+/* Today also having activity would otherwise be visually identical to any
+   other activity day, so it keeps a ring rather than losing the "today"
+   signal to the fill. */
+.calendar-cell.is-today.has-activity {
+  box-shadow: 0 0 0 2px var(--border-strong);
 }
 
 .calendar-cell.is-selected {
   background: var(--ink);
   color: var(--white);
-}
-
-.calendar-cell.is-selected::after {
-  background: var(--white);
 }
 
 .calendar-cell:disabled {
