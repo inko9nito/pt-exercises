@@ -421,6 +421,19 @@ export default function App() {
     }
   }, []);
 
+  // The browser/OS chrome (status bar, app-switcher card) is tinted from the
+  // <meta name="theme-color"> tag, which was hardcoded to the app's cream
+  // background — so it stayed cream even over the white exercise detail
+  // screen (issue #83). Switch it to match whichever page is actually
+  // showing, reading the same tokens the CSS uses so it can't drift from them.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    const showingDetail = !!selectedExercise && !detailClosing;
+    const varName = showingDetail ? '--white' : '--bg';
+    meta.content = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  }, [selectedExercise, detailClosing]);
+
   return (
     <div className="app">
       <main className="app-main">

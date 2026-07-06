@@ -27,6 +27,14 @@ export default function DailyView({ completions, plans, todayModel, onOpenExerci
   const [showAddSheet, setShowAddSheet] = useState(false);
   const isViewingToday = selectedDate === todayKey;
 
+  // Double-tapping any date in the week strip jumps back to the current
+  // week with today selected, regardless of which week/day you'd wandered
+  // off to (issue #93).
+  const jumpToToday = () => {
+    setWeekOffset(0);
+    setSelectedDate(todayKey);
+  };
+
   const dateLabel = today.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -52,6 +60,7 @@ export default function DailyView({ completions, plans, todayModel, onOpenExerci
         onWeekChange={setWeekOffset}
         completions={completions}
         plans={plans}
+        onJumpToday={jumpToToday}
       />
 
       {!isViewingToday ? (

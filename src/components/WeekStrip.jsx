@@ -1,8 +1,12 @@
-import { memo } from 'react';
+import { memo, useRef } from 'react';
 import { exercises } from '../data/exercises.js';
 import { dateKey, getPlanProgressOn, mondayIndex, WEEKDAY_LABELS } from '../utils/tracker.js';
 import { useWeekSwipeTrack } from '../utils/useWeekSwipeTrack.js';
 import { CheckIcon, StarIcon } from './Icons.jsx';
+
+// Same manual double-tap detection as the exercise image Lightbox — dblclick
+// doesn't fire reliably for two quick taps on touch devices.
+const DOUBLE_TAP_MS = 300;
 
 function getWeekDates(weekOffset) {
   const today = new Date();
@@ -20,14 +24,23 @@ function getWeekDates(weekOffset) {
 // exercise — which changes `completions` and forces every day's
 // getPlanProgressOn to recompute in the parent — only re-renders the day(s)
 // whose actual ring/label values changed, not all 7.
-function WeekDay({ dateKeyValue, label, dayNumber, isToday, isSelected, planTotal, planDone, bonusDone, onSelect }) {
+function WeekDay({ dateKeyValue, label, dayNumber, isToday, isSelected, planTotal, planDone, bonusDone, onSelect, onJumpToday }) {
   const fraction = planTotal > 0 ? planDone / planTotal : 0;
   const isDone = planTotal > 0 && planDone >= planTotal;
   const hasBonus = bonusDone > 0;
   const angle = Math.min(fraction, 1) * 360;
+  const lastTapRef = useRef(0);
+
+  const handleClick = () => {
+    const now = Date.now();
+    const isDoubleTap = now - lastTapRef.current < DOUBLE_TAP_MS;
+    lastTapRef.current = isDoubleTap ? 0 : now;
+    if (isDoubleTap) onJumpToday();
+    else onSelect(dateKeyValue);
+  };
 
   return (
-    <button className={`week-day ${isSelected ? 'is-selected' : ''}`} onClick={() => onSelect(dateKeyValue)}>
+    <button className={`week-day ${isSelected ? 'is-selected' : ''}`} onClick={handleClick}>
       <span className={`week-day-label ${isSelected ? 'is-selected' : ''} ${isToday ? 'is-today' : ''}`}>
         {label}
       </span>
@@ -50,7 +63,7 @@ function WeekDay({ dateKeyValue, label, dayNumber, isToday, isSelected, planTota
 
 const MemoWeekDay = memo(WeekDay);
 
-export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions, plans }) {
+export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWeekChange, completions, plans, onJumpToday }) {
   const todayKey = dateKey(new Date());
   const { trackProps, trackStyle, onTransitionEnd } = useWeekSwipeTrack(weekOffset, onWeekChange);
 
@@ -77,6 +90,7 @@ export default function WeekStrip({ selectedDate, onSelectDate, weekOffset, onWe
           planDone={planDone}
           bonusDone={bonusDone}
           onSelect={onSelectDate}
+          onJumpToday={onJumpToday}
         />
       );
     });
